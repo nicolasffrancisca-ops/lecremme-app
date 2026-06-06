@@ -1,0 +1,2617 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LE CRÈMME">
+<title>LE CRÈMME — Gestión</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rosa:    #C0395B;
+    --rosa-l:  #E8759A;
+    --rosa-xl: #F9E0E8;
+    --crema:   #FFF8F0;
+    --oscuro:  #1A0A0F;
+    --gris:    #6B5660;
+    --gris-l:  #F2EBF0;
+    --verde:   #1A7A4A;
+    --verde-l: #E6F4ED;
+    --rojo:    #C0392B;
+    --rojo-l:  #FDECEA;
+    --azul:    #1A5C8A;
+    --azul-l:  #E6F0F9;
+    --oro:     #B8860B;
+    --oro-l:   #FEF9E7;
+    --shadow:  0 4px 24px rgba(192,57,91,0.12);
+    --radius:  18px;
+    --radius-s: 10px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--crema);
+    color: var(--oscuro);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── SPLASH / LOGIN ─────────────────────────────── */
+  #splash {
+    position: fixed; inset: 0; z-index: 1000;
+    background: var(--rosa);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 16px;
+    transition: opacity .5s, transform .5s;
+  }
+  #splash.hide { opacity: 0; transform: scale(1.05); pointer-events: none; }
+  .splash-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 42px; color: white; letter-spacing: 2px;
+    text-align: center; line-height: 1.1;
+  }
+  .splash-sub { color: rgba(255,255,255,0.7); font-size: 13px; letter-spacing: 3px; text-transform: uppercase; }
+  .splash-ice { font-size: 52px; margin-bottom: 8px; }
+
+  /* ── HEADER ─────────────────────────────────────── */
+  #header {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--rosa);
+    padding: 14px 20px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 20px rgba(192,57,91,0.3);
+  }
+  .header-title {
+    font-family: 'DM Serif Display', serif;
+    color: white; font-size: 20px; letter-spacing: 0.5px;
+  }
+  .header-sub { color: rgba(255,255,255,0.7); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  .header-back {
+    background: rgba(255,255,255,0.2); border: none; border-radius: 50%;
+    width: 36px; height: 36px; color: white; font-size: 18px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    display: none;
+  }
+  .header-sync {
+    background: rgba(255,255,255,0.2); border: none; border-radius: 50%;
+    width: 36px; height: 36px; color: white; font-size: 16px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .header-sync.spinning { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── NAV BOTTOM ─────────────────────────────────── */
+  #nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+    background: white;
+    display: flex;
+    box-shadow: 0 -2px 20px rgba(0,0,0,0.08);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 10px 4px 8px;
+    cursor: pointer; border: none; background: none;
+    color: var(--gris); font-size: 10px; font-family: 'DM Sans', sans-serif;
+    font-weight: 500; letter-spacing: 0.3px; gap: 4px;
+    transition: color .2s;
+  }
+  .nav-item .nav-icon { font-size: 22px; transition: transform .2s; }
+  .nav-item.active { color: var(--rosa); }
+  .nav-item.active .nav-icon { transform: scale(1.15); }
+
+  /* ── MAIN CONTENT ───────────────────────────────── */
+  #main {
+    padding: 0 0 90px;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* ── SCREENS ────────────────────────────────────── */
+  .screen { display: none; animation: fadeUp .3s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── DASHBOARD ──────────────────────────────────── */
+  .dash-greeting {
+    background: linear-gradient(135deg, var(--rosa) 0%, #8B1A35 100%);
+    padding: 24px 20px 32px;
+    color: white;
+  }
+  .dash-greeting h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px; margin-bottom: 4px;
+  }
+  .dash-greeting p { opacity: 0.75; font-size: 13px; }
+  .dash-date { font-size: 12px; opacity: 0.6; margin-top: 8px; }
+
+  .kpi-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; padding: 20px 16px 8px;
+    margin-top: -16px;
+  }
+  .kpi-card {
+    background: white; border-radius: var(--radius);
+    padding: 16px; box-shadow: var(--shadow);
+    position: relative; overflow: hidden;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .kpi-card.verde::before { background: var(--verde); }
+  .kpi-card.rojo::before  { background: var(--rojo); }
+  .kpi-card.azul::before  { background: var(--azul); }
+  .kpi-card.oro::before   { background: var(--oro); }
+  .kpi-card.rosa::before  { background: var(--rosa); }
+  .kpi-label { font-size: 10px; color: var(--gris); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
+  .kpi-value { font-size: 20px; font-weight: 700; margin-top: 6px; line-height: 1.1; }
+  .kpi-value.verde { color: var(--verde); }
+  .kpi-value.rojo  { color: var(--rojo); }
+  .kpi-value.azul  { color: var(--azul); }
+  .kpi-value.oro   { color: var(--oro); }
+  .kpi-value.rosa  { color: var(--rosa); }
+  .kpi-icon { font-size: 28px; position: absolute; right: 12px; top: 12px; opacity: 0.15; }
+
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px; padding: 16px 16px 8px;
+    color: var(--oscuro);
+  }
+
+  /* ── QUICK ACTIONS ──────────────────────────────── */
+  .quick-actions {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; padding: 0 16px 16px;
+  }
+  .quick-btn {
+    background: white; border: none; border-radius: var(--radius-s);
+    padding: 16px 12px; display: flex; flex-direction: column;
+    align-items: flex-start; gap: 8px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    cursor: pointer; text-align: left;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .quick-btn:active { transform: scale(0.97); }
+  .quick-btn .q-icon { font-size: 26px; }
+  .quick-btn .q-label { font-size: 12px; font-weight: 600; color: var(--oscuro); line-height: 1.2; }
+  .quick-btn .q-sub   { font-size: 10px; color: var(--gris); }
+
+  /* ── LIST ITEMS ─────────────────────────────────── */
+  .list-section { padding: 0 16px 24px; }
+  .list-card {
+    background: white; border-radius: var(--radius-s);
+    margin-bottom: 8px; overflow: hidden;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+  }
+  .list-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--gris-l);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row:active { background: var(--rosa-xl); }
+  .list-row-left { display: flex; align-items: center; gap: 12px; }
+  .list-icon { font-size: 20px; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .list-icon.verde-bg { background: var(--verde-l); }
+  .list-icon.rojo-bg  { background: var(--rojo-l); }
+  .list-icon.azul-bg  { background: var(--azul-l); }
+  .list-icon.oro-bg   { background: var(--oro-l); }
+  .list-icon.rosa-bg  { background: var(--rosa-xl); }
+  .list-name { font-size: 14px; font-weight: 500; }
+  .list-sub  { font-size: 11px; color: var(--gris); margin-top: 2px; }
+  .list-value { font-size: 15px; font-weight: 700; text-align: right; }
+  .list-badge {
+    display: inline-block; padding: 3px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.3px;
+  }
+  .badge-verde { background: var(--verde-l); color: var(--verde); }
+  .badge-rojo  { background: var(--rojo-l);  color: var(--rojo); }
+  .badge-oro   { background: var(--oro-l);   color: var(--oro); }
+
+  /* ── REMITO SCREEN ──────────────────────────────── */
+  .remito-header {
+    background: var(--rosa);
+    padding: 20px 16px;
+    color: white;
+  }
+  .remito-selector {
+    display: flex; gap: 8px; overflow-x: auto;
+    padding: 12px 16px;
+    scrollbar-width: none;
+  }
+  .remito-selector::-webkit-scrollbar { display: none; }
+  .franq-chip {
+    flex-shrink: 0; padding: 8px 16px; border-radius: 20px;
+    border: 2px solid var(--rosa-l); background: white;
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    transition: all .2s; color: var(--rosa);
+  }
+  .franq-chip.active { background: var(--rosa); color: white; border-color: var(--rosa); }
+
+  .scan-zone {
+    margin: 12px 16px;
+    background: linear-gradient(135deg, var(--oscuro) 0%, #3D1020 100%);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    cursor: pointer;
+  }
+  .scan-icon { font-size: 40px; }
+  .scan-label { color: white; font-weight: 600; font-size: 15px; }
+  .scan-sub   { color: rgba(255,255,255,0.5); font-size: 12px; }
+  .scan-input {
+    position: absolute; opacity: 0; width: 1px; height: 1px;
+  }
+
+  /* ── TABLA REMITO ───────────────────────────────── */
+  .remito-table { padding: 0 16px; }
+  .remito-table-header {
+    display: grid; grid-template-columns: 2fr 1fr 1fr;
+    padding: 8px 0; border-bottom: 2px solid var(--rosa);
+    font-size: 11px; font-weight: 600; color: var(--gris);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .remito-row {
+    display: grid; grid-template-columns: 2fr 1fr 1fr;
+    padding: 10px 0; border-bottom: 1px solid var(--gris-l);
+    align-items: center;
+    animation: slideIn .2s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .remito-row .sabor { font-size: 13px; font-weight: 500; }
+  .remito-row .kg    { font-size: 13px; color: var(--verde); font-weight: 600; }
+  .remito-row .precio { font-size: 12px; color: var(--gris); }
+  .remito-row .subtotal { font-size: 13px; font-weight: 700; }
+
+  .remito-total {
+    margin: 12px 16px;
+    background: var(--rosa);
+    border-radius: var(--radius-s);
+    padding: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .remito-total .label { color: rgba(255,255,255,0.8); font-size: 13px; font-weight: 500; }
+  .remito-total .valor { color: white; font-size: 22px; font-weight: 700; }
+
+  /* ── FORM ───────────────────────────────────────── */
+  .form-section { padding: 16px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--gris); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; display: block; }
+  .form-input, .form-select {
+    width: 100%; padding: 12px 14px;
+    border: 2px solid var(--gris-l); border-radius: var(--radius-s);
+    font-family: 'DM Sans', sans-serif; font-size: 15px;
+    background: white; color: var(--oscuro);
+    outline: none; transition: border .2s;
+    appearance: none; -webkit-appearance: none;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--rosa); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── BUTTONS ────────────────────────────────────── */
+  .btn-primary {
+    width: 100%; padding: 16px;
+    background: var(--rosa); color: white; border: none;
+    border-radius: var(--radius-s); font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: opacity .2s, transform .15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.99); }
+  .btn-secondary {
+    width: 100%; padding: 14px;
+    background: white; color: var(--rosa);
+    border: 2px solid var(--rosa); border-radius: var(--radius-s);
+    font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+    cursor: pointer; margin-top: 8px;
+  }
+
+  /* ── TOAST ──────────────────────────────────────── */
+  #toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--oscuro); color: white;
+    padding: 12px 20px; border-radius: 30px;
+    font-size: 13px; font-weight: 500;
+    opacity: 0; transition: opacity .3s, transform .3s;
+    z-index: 500; white-space: nowrap;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── FLUJO CAJA ─────────────────────────────────── */
+  .caja-saldo {
+    margin: 16px;
+    background: linear-gradient(135deg, var(--verde) 0%, #0D5C35 100%);
+    border-radius: var(--radius);
+    padding: 20px;
+    color: white;
+  }
+  .caja-saldo .label { opacity: 0.75; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .caja-saldo .monto { font-size: 34px; font-weight: 700; margin-top: 6px; }
+  .caja-mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .caja-mini { background: rgba(255,255,255,0.15); border-radius: 10px; padding: 10px; }
+  .caja-mini .m-label { font-size: 10px; opacity: 0.7; }
+  .caja-mini .m-val   { font-size: 16px; font-weight: 700; margin-top: 2px; }
+
+  /* ── RANKING ────────────────────────────────────── */
+  .ranking-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    background: white; margin: 0 16px 8px;
+    border-radius: var(--radius-s);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  }
+  .rank-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  .rank-1 { background: #FFD700; color: #5C4000; }
+  .rank-2 { background: #C0C0C0; color: #333; }
+  .rank-3 { background: #CD7F32; color: white; }
+  .rank-other { background: var(--gris-l); color: var(--gris); }
+  .rank-name { flex: 1; font-size: 13px; font-weight: 500; }
+  .rank-bar-wrap { width: 80px; }
+  .rank-bar { height: 4px; background: var(--gris-l); border-radius: 2px; overflow: hidden; }
+  .rank-bar-fill { height: 100%; background: var(--rosa); border-radius: 2px; transition: width .8s ease; }
+  .rank-kg { font-size: 12px; font-weight: 600; color: var(--rosa); width: 50px; text-align: right; }
+
+  /* ── CONFIG API ─────────────────────────────────── */
+  .api-setup {
+    padding: 24px 16px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  .api-info {
+    background: var(--azul-l); border-radius: var(--radius-s);
+    padding: 14px; display: flex; gap: 10px;
+  }
+  .api-info .icon { font-size: 20px; flex-shrink: 0; }
+  .api-info p { font-size: 13px; color: var(--azul); line-height: 1.5; }
+
+  /* ── LOADING ────────────────────────────────────── */
+  .loading-dots {
+    display: flex; gap: 6px; align-items: center; justify-content: center;
+    padding: 40px;
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--rosa);
+    animation: bounce .8s infinite;
+  }
+  .dot:nth-child(2) { animation-delay: .15s; }
+  .dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes bounce {
+    0%,60%,100% { transform: translateY(0); }
+    30%         { transform: translateY(-8px); }
+  }
+
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+    color: var(--gris);
+  }
+  .empty-state .e-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--oscuro); }
+  .empty-state p { font-size: 13px; line-height: 1.5; }
+
+  .divider { height: 1px; background: var(--gris-l); margin: 0 16px; }
+  .spacer-sm { height: 8px; }
+  .spacer-md { height: 16px; }
+
+  .tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .tag-verde { background: var(--verde-l); color: var(--verde); }
+  .tag-rojo  { background: var(--rojo-l);  color: var(--rojo); }
+  .tag-oro   { background: var(--oro-l);   color: var(--oro); }
+
+  .pill-tabs {
+    display: flex; gap: 6px; padding: 12px 16px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .pill-tabs::-webkit-scrollbar { display: none; }
+  .pill {
+    flex-shrink: 0; padding: 7px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    background: white; color: var(--gris); border: 1.5px solid var(--gris-l);
+    transition: all .2s;
+  }
+  .pill.active { background: var(--rosa); color: white; border-color: var(--rosa); }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-ice">🍦</div>
+  <div class="splash-logo">LE CRÈMME</div>
+  <div class="splash-sub">Sistema de Gestión</div>
+</div>
+
+<!-- HEADER -->
+<div id="header">
+  <button class="header-back" id="btnBack" onclick="goBack()">←</button>
+  <div>
+    <div class="header-title" id="headerTitle">LE CRÈMME</div>
+    <div class="header-sub" id="headerSub">Panel de gestión</div>
+  </div>
+  <button class="header-sync" id="btnSync" onclick="syncData()" title="Sincronizar">⟳</button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- ── DASHBOARD ─────────────────────────────── -->
+  <div class="screen active" id="screen-dashboard">
+    <div class="dash-greeting">
+      <h2>Buenos días 👋</h2>
+      <p>Resumen del negocio en tiempo real</p>
+      <div class="dash-date" id="dashDate"></div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card verde">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-label">Saldo Caja</div>
+        <div class="kpi-value verde" id="kpi-caja">—</div>
+      </div>
+      <div class="kpi-card azul">
+        <div class="kpi-icon">🏦</div>
+        <div class="kpi-label">Banco Macro</div>
+        <div class="kpi-value azul" id="kpi-banco">—</div>
+      </div>
+      <div class="kpi-card rosa">
+        <div class="kpi-icon">🏪</div>
+        <div class="kpi-label">A Cobrar</div>
+        <div class="kpi-value rosa" id="kpi-cobrar">—</div>
+      </div>
+      <div class="kpi-card oro">
+        <div class="kpi-icon">🧊</div>
+        <div class="kpi-label">Stock Total</div>
+        <div class="kpi-value oro" id="kpi-stock">—</div>
+      </div>
+    </div>
+
+    <div class="section-title">Acciones rápidas</div>
+    <div class="quick-actions">
+      <button class="quick-btn" onclick="goTo('remitos')">
+        <span class="q-icon">📋</span>
+        <span class="q-label">Nuevo Remito</span>
+        <span class="q-sub">Escanear tachos</span>
+      </button>
+      <button class="quick-btn" onclick="goTo('caja')">
+        <span class="q-icon">💵</span>
+        <span class="q-label">Flujo de Caja</span>
+        <span class="q-sub">Rondeau</span>
+      </button>
+      <button class="quick-btn" onclick="goTo('cuentas')">
+        <span class="q-icon">💳</span>
+        <span class="q-label">Cta. Cte.</span>
+        <span class="q-sub">Franquicias</span>
+      </button>
+      <button class="quick-btn" onclick="goTo('ranking')">
+        <span class="q-icon">📈</span>
+        <span class="q-label">Ranking</span>
+        <span class="q-sub">Sabores</span>
+      </button>
+      <button class="quick-btn" onclick="goTo('compras')">
+        <span class="q-icon">🛒</span>
+        <span class="q-label">Registrar Compra</span>
+        <span class="q-sub">Stock MP</span>
+      </button>
+      <button class="quick-btn" onclick="goTo('salidas')">
+        <span class="q-icon">📤</span>
+        <span class="q-label">Retiro a Producción</span>
+        <span class="q-sub">Baja de stock</span>
+      </button>
+    </div>
+
+    <div class="section-title">⚠️ Alertas de Stock</div>
+    <div id="alertasStock" style="padding:0 16px 8px">
+      <div style="display:flex;align-items:center;gap:8px;background:white;border-radius:10px;padding:14px;box-shadow:0 1px 8px rgba(0,0,0,0.05)">
+        <div style="font-size:20px">⏳</div>
+        <div style="font-size:13px;color:var(--gris)">Cargando alertas...</div>
+      </div>
+    </div>
+
+    <div class="section-title">Franquicias</div>
+    <div class="list-section">
+      <div class="list-card">
+        <div class="list-row" onclick="goTo('cuentas')">
+          <div class="list-row-left">
+            <div class="list-icon rosa-bg">🏪</div>
+            <div>
+              <div class="list-name">Martinolli</div>
+              <div class="list-sub" id="saldo-mart">Cargando...</div>
+            </div>
+          </div>
+          <div class="list-value rosa" id="val-mart">—</div>
+        </div>
+        <div class="list-row" onclick="goTo('cuentas')">
+          <div class="list-row-left">
+            <div class="list-icon rosa-bg">🏪</div>
+            <div>
+              <div class="list-name">Bv San Juan</div>
+              <div class="list-sub" id="saldo-bsj">Cargando...</div>
+            </div>
+          </div>
+          <div class="list-value rosa" id="val-bsj">—</div>
+        </div>
+        <div class="list-row" onclick="goTo('cuentas')">
+          <div class="list-row-left">
+            <div class="list-icon rosa-bg">🏪</div>
+            <div>
+              <div class="list-name">Rondeau</div>
+              <div class="list-sub" id="saldo-ron">Cargando...</div>
+            </div>
+          </div>
+          <div class="list-value rosa" id="val-ron">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── REMITOS ────────────────────────────────── -->
+  <div class="screen" id="screen-remitos">
+    <div class="remito-header">
+      <div style="font-size:13px;opacity:.7;margin-bottom:4px">Nuevo remito</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:white">Escanear tachos</div>
+    </div>
+
+    <div class="remito-selector">
+      <div class="franq-chip active" onclick="selectFranq(this,'Martinolli')">Martinolli</div>
+      <div class="franq-chip" onclick="selectFranq(this,'Bv San Juan')">Bv San Juan</div>
+      <div class="franq-chip" onclick="selectFranq(this,'Rondeau')">Rondeau</div>
+    </div>
+
+    <div class="form-section" style="padding-bottom:0">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">N° Remito</label>
+          <input class="form-input" id="remitoNum" placeholder="RM-0001">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input class="form-input" type="date" id="remitoFecha">
+        </div>
+      </div>
+    </div>
+
+    <!-- Zona de escaneo -->
+    <div class="scan-zone" onclick="abrirCamara()">
+      <div class="scan-icon">📷</div>
+      <div class="scan-label">Escanear con cámara</div>
+      <div class="scan-sub">Tocá para abrir el escáner</div>
+    </div>
+
+    <!-- O ingresar manual -->
+    <div style="padding: 0 16px; display:flex; align-items:center; gap:8px; margin-top:4px">
+      <div style="flex:1;height:1px;background:var(--gris-l)"></div>
+      <span style="font-size:12px;color:var(--gris)">o ingresar manual</span>
+      <div style="flex:1;height:1px;background:var(--gris-l)"></div>
+    </div>
+    <div class="form-section" style="padding-top:8px;padding-bottom:0">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Código barras</label>
+          <input class="form-input" id="codigoManual" placeholder="2000270006717" inputmode="numeric">
+        </div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:16px">
+          <button class="btn-primary" style="width:auto;padding:12px 16px;font-size:13px" onclick="procesarManual()">+ Agregar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de tachos -->
+    <div class="remito-table" id="remitoTabla" style="display:none">
+      <div class="section-title" style="padding-left:0">Tachos cargados</div>
+      <div class="remito-table-header">
+        <span>Sabor</span><span>Kg</span><span>Subtotal</span>
+      </div>
+      <div id="remitoRows"></div>
+    </div>
+
+    <!-- Subtotal Sección A -->
+    <div class="remito-total" id="remitoTotalBox" style="display:none">
+      <div>
+        <div class="label">Subtotal helados</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:2px" id="remitoCount">0 tachos</div>
+      </div>
+      <div class="valor" id="remitoTotalVal">$0</div>
+    </div>
+
+    <!-- ── SECCIÓN B — INSUMOS ────────────────── -->
+    <div id="seccionB" style="display:none">
+      <div style="background:var(--rosa);padding:14px 16px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">📦</span>
+        <div>
+          <div style="color:white;font-weight:700;font-size:14px">Sección B — Insumos / Extras</div>
+          <div style="color:rgba(255,255,255,.6);font-size:11px">Térmicos, cucharas, bolsas, etc.</div>
+        </div>
+      </div>
+
+      <div class="form-section" style="padding-bottom:0">
+        <div class="form-row">
+          <div class="form-group" style="flex:2">
+            <label class="form-label">Insumo</label>
+            <select class="form-select" id="secBInsumo" style="font-size:13px">
+              <option value="">— Seleccioná —</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1">
+            <label class="form-label">Cantidad</label>
+            <input class="form-input" type="number" id="secBCantidad" placeholder="0" min="0" step="0.01" autocorrect="off">
+          </div>
+        </div>
+        <button class="btn-primary" onclick="agregarInsumoB()" style="margin-bottom:8px">+ Agregar insumo</button>
+      </div>
+
+      <!-- Lista insumos cargados -->
+      <div id="secBRows" style="padding:0 16px 8px"></div>
+
+      <!-- Subtotal B -->
+      <div id="secBTotal" style="display:none;margin:0 16px 8px;background:var(--rosa);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="color:rgba(255,255,255,.7);font-size:12px">Subtotal insumos</div>
+          <div style="color:rgba(255,255,255,.6);font-size:11px;margin-top:2px" id="secBCount">0 items</div>
+        </div>
+        <div style="color:white;font-size:18px;font-weight:700" id="secBTotalVal">$0</div>
+      </div>
+    </div>
+
+    <!-- TOTAL GENERAL -->
+    <div id="remitoTotalGeneral" style="display:none;margin:8px 16px;background:var(--oscuro);border-radius:12px;padding:16px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="color:rgba(255,255,255,.7);font-size:13px;font-weight:500">TOTAL REMITO</div>
+        <div style="color:rgba(255,255,255,.4);font-size:11px;margin-top:2px" id="remitoTotalDesc">—</div>
+      </div>
+      <div style="color:white;font-size:22px;font-weight:700" id="remitoTotalGeneralVal">$0</div>
+    </div>
+
+    <!-- BOTONES DE ACCIÓN -->
+    <div class="form-section" id="remitoActions" style="display:none">
+      <button class="btn-primary" onclick="cerrarRemito()" 
+              style="background:var(--verde);font-size:16px;padding:18px">
+        📁 Cerrar y enviar al historial
+      </button>
+      <button class="btn-secondary" onclick="limpiarRemito()" style="margin-top:8px">
+        🗑 Limpiar remito
+      </button>
+    </div>
+
+    <div class="spacer-md"></div>
+  </div>
+
+  <!-- ── CUENTAS CORRIENTES ─────────────────────── -->
+  <div class="screen" id="screen-cuentas">
+    <div class="pill-tabs">
+      <div class="pill active" onclick="selectTab(this,'mart')">Martinolli</div>
+      <div class="pill" onclick="selectTab(this,'bsj')">Bv San Juan</div>
+      <div class="pill" onclick="selectTab(this,'ron')">Rondeau</div>
+      <div class="pill" onclick="selectTab(this,'duolatte')">DUOLATTE</div>
+    </div>
+
+    <div id="cta-content">
+      <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+
+    <div class="form-section">
+      <button class="btn-primary" onclick="mostrarFormMovimiento()">+ Registrar movimiento</button>
+    </div>
+  </div>
+
+  <!-- ── FLUJO DE CAJA ──────────────────────────── -->
+  <div class="screen" id="screen-caja">
+    <div class="caja-saldo">
+      <div class="label">Saldo actual en caja</div>
+      <div class="monto" id="cajaSaldo">—</div>
+      <div class="caja-mini-grid">
+        <div class="caja-mini">
+          <div class="m-label">Banco Macro</div>
+          <div class="m-val" id="cajaBanco">—</div>
+        </div>
+        <div class="caja-mini">
+          <div class="m-label">Mercado Pago</div>
+          <div class="m-val" id="cajaMP">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Registrar movimiento</div>
+    <div class="form-section">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input class="form-input" type="date" id="cajaFecha">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Turno</label>
+          <select class="form-select" id="cajaTurno">
+            <option>Mañana</option>
+            <option>Tarde</option>
+            <option>—</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Concepto</label>
+        <input class="form-input" id="cajaConcepto" placeholder="Ej: Cierre turno mañana">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-select" id="cajaTipo">
+          <option>Cierre de caja</option>
+          <option>Gasto operativo</option>
+          <option>Pago proveedor</option>
+          <option>Retiro</option>
+          <option>Depósito</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Ingreso ($)</label>
+          <input class="form-input" type="number" id="cajaIngreso" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Egreso ($)</label>
+          <input class="form-input" type="number" id="cajaEgreso" placeholder="0">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="guardarMovCaja()">✓ Guardar movimiento</button>
+    </div>
+
+    <div class="section-title">Últimos movimientos</div>
+    <div id="cajaMovimientos">
+      <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
+
+  <!-- ── RANKING ────────────────────────────────── -->
+  <div class="screen" id="screen-ranking">
+    <div style="background:var(--rosa);padding:20px 16px;color:white">
+      <div style="font-size:13px;opacity:.7;margin-bottom:4px">Acumulado histórico</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px">Ranking de Sabores</div>
+    </div>
+    <div class="spacer-sm"></div>
+    <div id="rankingList">
+      <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </div>
+
+  <!-- ── CONFIGURACIÓN ──────────────────────────── -->
+  <div class="screen" id="screen-config">
+    <div class="api-setup">
+      <div class="api-info">
+        <span class="icon">ℹ️</span>
+        <p>Esta app se conecta a tu Google Sheets. Ingresá la <strong>API Key</strong> y el <strong>ID de tu planilla</strong> para activar la sincronización.</p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Google Sheets API Key</label>
+        <input class="form-input" id="apiKey" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="AIza..." 
+               value="AIzaSyA4pwJ-qAatpYLPUX9yDoybHlzXrLojk1E" autocorrect="off" autocapitalize="off" spellcheck="false">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ID de la planilla</label>
+        <input class="form-input" id="sheetId" placeholder="1Tf4lPa-..."
+               value="1WNmoIQ2s4cMPSxL_IRhPhUWB1DGGyICciy9Fqgnmo74">
+        <div style="font-size:11px;color:var(--gris);margin-top:4px">Ya está cargado el ID de tu planilla LE CRÈMME</div>
+      </div>
+      <button class="btn-primary" onclick="guardarConfig()">✓ Guardar configuración</button>
+
+      <div class="divider"></div>
+
+      <div class="form-group">
+        <label class="form-label">Precio fijo helado a FQ ($/kg)</label>
+        <input class="form-input" type="number" id="precioFQ" placeholder="0">
+        <div style="font-size:11px;color:var(--gris);margin-top:4px">Se usa para calcular los subtotales en remitos</div>
+      </div>
+      <button class="btn-secondary" onclick="guardarPrecioFQ()">Guardar precio</button>
+
+      <div class="divider"></div>
+      <div style="text-align:center;padding:16px 0">
+        <div style="font-family:'DM Serif Display',serif;font-size:18px;color:var(--rosa)">🍦 LE CRÈMME</div>
+        <div style="font-size:11px;color:var(--gris);margin-top:4px">Sistema de Gestión v1.0</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── COMPRAS / STOCK MP ─────────────────────── -->
+  <div class="screen" id="screen-compras">
+    <div style="background:linear-gradient(135deg,#1A5C1A 0%,#0D3D0D 100%);padding:20px 16px;color:white">
+      <div style="font-size:13px;opacity:.7;margin-bottom:4px">Gestión de inventario</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px">Registrar Compra</div>
+      <div style="font-size:12px;opacity:.6;margin-top:4px">Actualiza stock y precio automáticamente</div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-group">
+        <label class="form-label">Insumo / Materia Prima</label>
+        <select class="form-select" id="compraInsumo" onchange="onInsumoChange()">
+          <option value="">— Seleccioná un insumo —</option>
+        </select>
+      </div>
+
+      <!-- Info del insumo seleccionado -->
+      <div id="compraInfo" style="display:none;background:var(--verde-l);border-radius:var(--radius-s);padding:14px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Estado actual en stock</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="font-size:10px;color:var(--gris)">Stock actual</div>
+            <div style="font-size:18px;font-weight:700;color:var(--verde)" id="infoStockActual">—</div>
+            <div style="font-size:10px;color:var(--gris)">bultos</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gris)">Precio actual</div>
+            <div style="font-size:18px;font-weight:700;color:var(--verde)" id="infoPrecioActual">—</div>
+            <div style="font-size:10px;color:var(--gris)">neto/bulto</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Cantidad comprada (bultos)</label>
+          <input class="form-input" type="number" id="compraCantidad" placeholder="0" min="0" step="0.01"
+                 autocorrect="off" oninput="calcularCompra()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Precio neto/bulto ($)</label>
+          <input class="form-input" type="number" id="compraPrecio" placeholder="0" min="0"
+                 autocorrect="off" oninput="calcularCompra()">
+        </div>
+      </div>
+
+      <!-- Preview del resultado -->
+      <div id="compraPreview" style="display:none;background:var(--oscuro);border-radius:var(--radius-s);padding:16px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Lo que va a quedar en la planilla</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.5)">Nuevo stock</div>
+            <div style="font-size:20px;font-weight:700;color:#4ADE80" id="previewStock">—</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4)">bultos</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.5)">Nuevo precio</div>
+            <div style="font-size:20px;font-weight:700;color:#4ADE80" id="previewPrecio">—</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4)">neto/bulto</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.4)">
+          Total compra (neto): <span style="color:white;font-weight:600" id="previewTotal">—</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Responsable</label>
+        <input class="form-input" id="compraResponsable" placeholder="Nombre del empleado"
+               autocorrect="off">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">N° Factura (opcional)</label>
+        <input class="form-input" id="compraFactura" placeholder="FAC-0001" autocorrect="off" autocapitalize="off">
+      </div>
+
+      <button class="btn-primary" onclick="confirmarCompra()" id="btnConfirmarCompra" disabled style="opacity:0.5">
+        ✓ Confirmar compra y actualizar planilla
+      </button>
+    </div>
+
+    <div class="section-title">Últimas compras registradas</div>
+    <div id="compraHistorial">
+      <div class="empty-state">
+        <div class="e-icon">📦</div>
+        <h3>Sin compras registradas</h3>
+        <p>Las compras que registres aparecerán acá</p>
+      </div>
+    </div>
+    <div class="spacer-md"></div>
+  </div>
+
+
+  <!-- ── SALIDAS / BAJA DE STOCK ───────────────── -->
+  <div class="screen" id="screen-salidas">
+    <div style="background:linear-gradient(135deg,#8B1A35 0%,#3D0A18 100%);padding:20px 16px;color:white">
+      <div style="font-size:13px;opacity:.7;margin-bottom:4px">Salida de depósito</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px">Retiro a Producción</div>
+      <div style="font-size:12px;opacity:.6;margin-top:4px">Descuenta del stock lo que llevás a la línea</div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-group">
+        <label class="form-label">Insumo / Materia Prima</label>
+        <select class="form-select" id="salidaInsumo" onchange="onSalidaInsumoChange()">
+          <option value="">— Seleccioná un insumo —</option>
+        </select>
+      </div>
+
+      <!-- Info del insumo seleccionado -->
+      <div id="salidaInfo" style="display:none;border-radius:var(--radius-s);padding:14px;margin-bottom:16px" class="salidaInfoBox">
+        <div style="font-size:11px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Stock actual en depósito</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="font-size:10px;color:var(--gris)">Stock actual</div>
+            <div style="font-size:28px;font-weight:700" id="salidaStockActual">—</div>
+            <div style="font-size:10px;color:var(--gris)">bultos</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--gris)">Stock mínimo</div>
+            <div style="font-size:28px;font-weight:700;color:var(--gris)" id="salidaStockMin">—</div>
+            <div style="font-size:10px;color:var(--gris)">bultos</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Cantidad a retirar (bultos)</label>
+        <input class="form-input" type="number" id="salidaCantidad" placeholder="0" min="0" step="0.01"
+               autocorrect="off" oninput="calcularSalida()">
+      </div>
+
+      <!-- Preview resultado -->
+      <div id="salidaPreview" style="display:none;border-radius:var(--radius-s);padding:16px;margin-bottom:16px;background:var(--oscuro)">
+        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Lo que va a quedar en la planilla</div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.5)">Stock actual</div>
+            <div style="font-size:22px;font-weight:700;color:white" id="salidaDesde">—</div>
+          </div>
+          <div style="font-size:24px;color:rgba(255,255,255,0.4)">→</div>
+          <div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.5)">Nuevo stock</div>
+            <div style="font-size:22px;font-weight:700" id="salidaHasta">—</div>
+          </div>
+        </div>
+        <div id="salidaAlerta" style="display:none;margin-top:10px;background:rgba(255,100,100,0.2);border-radius:8px;padding:8px;font-size:12px;color:#FF9999">
+          ⚠️ El stock nuevo queda por debajo del mínimo
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Responsable</label>
+        <input class="form-input" id="salidaResponsable" placeholder="Nombre del empleado"
+               autocorrect="off">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Motivo (opcional)</label>
+        <input class="form-input" id="salidaMotivo" placeholder="Ej: Producción base blanca" 
+               autocorrect="off">
+      </div>
+
+      <button class="btn-primary" onclick="confirmarSalida()" id="btnConfirmarSalida" 
+              disabled style="opacity:0.5;background:var(--rojo)">
+        ✓ Confirmar retiro y actualizar stock
+      </button>
+    </div>
+
+    <div class="section-title">Últimos retiros registrados</div>
+    <div id="salidaHistorial">
+      <div class="empty-state">
+        <div class="e-icon">📤</div>
+        <h3>Sin retiros registrados</h3>
+        <p>Los retiros a producción aparecerán acá</p>
+      </div>
+    </div>
+    <div class="spacer-md"></div>
+  </div>
+
+
+  <!-- ── DUOLATTE CTA. CTE. ───────────────────── -->
+  <div class="screen" id="screen-duolatte">
+    <div style="background:linear-gradient(135deg,#1A5C8A 0%,#0D3D5C 100%);padding:20px 16px;color:white">
+      <div style="font-size:13px;opacity:.7;margin-bottom:4px">Proveedor</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px">Cuenta Corriente DUOLATTE</div>
+      <div style="font-size:12px;opacity:.6;margin-top:4px">Facturas (Debe) y Pagos (Haber)</div>
+    </div>
+
+    <!-- Saldo actual -->
+    <div style="margin:16px 16px 8px;background:var(--rojo-l);border-radius:var(--radius-s);padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Saldo</div>
+        <div style="font-size:20px;font-weight:700;color:var(--rojo);margin-top:2px" id="duolatteSaldo">—</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Total Debe</div>
+        <div style="font-size:16px;font-weight:700;color:var(--rojo);margin-top:2px" id="duolatteTotalDebe">—</div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Total Haber</div>
+        <div style="font-size:16px;font-weight:700;color:var(--verde);margin-top:2px" id="duolatteTotalHaber">—</div>
+      </div>
+    </div>
+
+    <!-- Tabs Factura / Pago -->
+    <div class="pill-tabs" style="padding:8px 16px">
+      <div class="pill active" id="tabFactura" onclick="switchDuolatteTab('factura')">📤 Cargar Factura</div>
+      <div class="pill" id="tabPago" onclick="switchDuolatteTab('pago')">📥 Registrar Pago</div>
+    </div>
+
+    <!-- FORM FACTURA (DEBE) -->
+    <div id="formFactura" class="form-section">
+      <div style="background:var(--rojo-l);border-radius:var(--radius-s);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--rojo);font-weight:500">
+        📤 Factura → suma al saldo deudor (DEBE)
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input class="form-input" type="date" id="facturaFecha">
+        </div>
+        <div class="form-group">
+          <label class="form-label">N° Factura</label>
+          <input class="form-input" id="facturaNum" placeholder="FAC-0001"
+                 autocorrect="off" autocapitalize="off">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Concepto</label>
+        <input class="form-input" id="facturaConcepto" placeholder="Ej: Compra insumos marzo"
+               autocorrect="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Importe NETO ($)</label>
+        <input class="form-input" type="number" id="facturaImporte" placeholder="0"
+               oninput="calcFactura()">
+      </div>
+      <div id="facturaPreview" style="display:none;background:var(--oscuro);border-radius:var(--radius-s);padding:14px;margin-bottom:14px">
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Resumen</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4)">Neto</div>
+            <div style="font-size:16px;font-weight:700;color:white" id="factPreviewNeto">—</div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4)">Bruto (+21% IVA)</div>
+            <div style="font-size:16px;font-weight:700;color:#FF9999" id="factPreviewBruto">—</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.4)">
+          Saldo nuevo: <span style="color:#FF9999;font-weight:700" id="factPreviewSaldo">—</span>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="confirmarFactura()" style="background:var(--rojo)">
+        ✓ Registrar factura en Cta. Cte.
+      </button>
+    </div>
+
+    <!-- FORM PAGO (HABER) -->
+    <div id="formPago" class="form-section" style="display:none">
+      <div style="background:var(--verde-l);border-radius:var(--radius-s);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--verde);font-weight:500">
+        📥 Pago → reduce el saldo deudor (HABER)
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fecha</label>
+          <input class="form-input" type="date" id="pagoFecha">
+        </div>
+        <div class="form-group">
+          <label class="form-label">N° Comprobante</label>
+          <input class="form-input" id="pagoComp" placeholder="REC-0001"
+                 autocorrect="off" autocapitalize="off">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Concepto</label>
+        <input class="form-input" id="pagoConcepto" placeholder="Ej: Pago factura marzo"
+               autocorrect="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Forma de pago</label>
+        <select class="form-select" id="pagoFPago">
+          <option>Cheque</option>
+          <option>Efectivo</option>
+          <option>Transferencia</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Importe ($)</label>
+        <input class="form-input" type="number" id="pagoImporte" placeholder="0"
+               oninput="calcPago()">
+      </div>
+      <div id="pagoPreview" style="display:none;background:var(--oscuro);border-radius:var(--radius-s);padding:14px;margin-bottom:14px">
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Saldo después del pago</div>
+        <div style="font-size:24px;font-weight:700" id="pagoPreviewSaldo">—</div>
+      </div>
+      <button class="btn-primary" onclick="confirmarPago()" style="background:var(--verde)">
+        ✓ Registrar pago en Cta. Cte.
+      </button>
+    </div>
+
+    <div class="section-title">Últimos movimientos</div>
+    <div id="duolatteMovs">
+      <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+    <div class="spacer-md"></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- NAV -->
+
+<!-- MODAL CÁMARA ESCÁNER -->
+<div id="cameraModal" style="display:none;position:fixed;inset:0;z-index:500;background:#000">
+  <div style="position:relative;width:100%;height:100%">
+    <!-- Viewfinder -->
+    <div id="cameraViewfinder" style="width:100%;height:100%"></div>
+
+    <!-- Overlay con guía -->
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none">
+      <!-- Marco de escaneo -->
+      <div style="width:280px;height:120px;position:relative;margin-bottom:20px">
+        <div style="position:absolute;top:0;left:0;width:30px;height:30px;border-top:3px solid #fff;border-left:3px solid #fff;border-radius:2px 0 0 0"></div>
+        <div style="position:absolute;top:0;right:0;width:30px;height:30px;border-top:3px solid #fff;border-right:3px solid #fff;border-radius:0 2px 0 0"></div>
+        <div style="position:absolute;bottom:0;left:0;width:30px;height:30px;border-bottom:3px solid #fff;border-left:3px solid #fff;border-radius:0 0 0 2px"></div>
+        <div style="position:absolute;bottom:0;right:0;width:30px;height:30px;border-bottom:3px solid #fff;border-right:3px solid #fff;border-radius:0 0 2px 0"></div>
+        <!-- Línea de escaneo animada -->
+        <div id="scanLine" style="position:absolute;left:4px;right:4px;height:2px;background:rgba(192,57,91,0.8);top:50%;animation:scanAnim 2s ease-in-out infinite"></div>
+      </div>
+      <div style="color:white;font-size:14px;font-weight:500;text-shadow:0 1px 4px rgba(0,0,0,.5)">
+        Apuntá al código de barras del tacho
+      </div>
+      <div style="color:rgba(255,255,255,.6);font-size:12px;margin-top:6px">
+        Mantenelo dentro del marco
+      </div>
+    </div>
+
+    <!-- Botón cerrar -->
+    <button onclick="cerrarCamara()" style="position:absolute;top:env(safe-area-inset-top,20px);right:20px;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.6);border:none;color:white;font-size:22px;cursor:pointer;z-index:10">✕</button>
+
+    <!-- Resultado detectado -->
+    <div id="scanResultado" style="position:absolute;bottom:60px;left:20px;right:20px;background:rgba(0,0,0,.8);border-radius:12px;padding:16px;display:none;text-align:center">
+      <div style="color:var(--rosa);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">✅ Código detectado</div>
+      <div style="color:white;font-size:18px;font-weight:700" id="scanResultadoCod"></div>
+      <div style="color:rgba(255,255,255,.7);font-size:13px;margin-top:4px" id="scanResultadoNombre"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes scanAnim {
+  0%,100% { top: 10%; }
+  50% { top: 85%; }
+}
+</style>
+
+<nav id="nav">
+  <button class="nav-item active" onclick="goTo('dashboard')" id="nav-dashboard">
+    <span class="nav-icon">📊</span>Dashboard
+  </button>
+  <button class="nav-item" onclick="goTo('remitos')" id="nav-remitos">
+    <span class="nav-icon">📋</span>Remitos
+  </button>
+  <button class="nav-item" onclick="goTo('cuentas')" id="nav-cuentas">
+    <span class="nav-icon">💳</span>Cuentas
+  </button>
+  <button class="nav-item" onclick="goTo('caja')" id="nav-caja">
+    <span class="nav-icon">💵</span>Caja
+  </button>
+  <button class="nav-item" onclick="goTo('compras')" id="nav-compras">
+    <span class="nav-icon">🛒</span>Compras
+  </button>
+  <button class="nav-item" onclick="goTo('salidas')" id="nav-salidas">
+    <span class="nav-icon">📤</span>Retiros
+  </button>
+  <button class="nav-item" onclick="goTo('duolatte')" id="nav-duolatte">
+    <span class="nav-icon">🏭</span>DUOLATTE
+  </button>
+  <button class="nav-item" onclick="goTo('config')" id="nav-config">
+    <span class="nav-icon">⚙️</span>Config
+  </button>
+</nav>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ── ESTADO GLOBAL ────────────────────────────────────────────
+const STATE = {
+  apiKey: 'AIzaSyA4pwJ-qAatpYLPUX9yDoybHlzXrLojk1E',
+  sheetId: '1WNmoIQ2s4cMPSxL_IRhPhUWB1DGGyICciy9Fqgnmo74',
+  apiKey: localStorage.getItem('lc_apikey') || 'AIzaSyA4pwJ-qAatpYLPUX9yDoybHlzXrLojk1E',
+  sheetId: '1WNmoIQ2s4cMPSxL_IRhPhUWB1DGGyICciy9Fqgnmo74',
+  precioFQ: parseFloat(localStorage.getItem('lc_precioFQ')) || 0,
+  currentScreen: 'dashboard',
+  currentFranq: 'Martinolli',
+  currentCta: 'mart',
+  remitoItems: [],
+  history: [],
+};
+
+// Cargar config guardada
+// API key hardcoded
+// Sheet ID hardcoded
+
+// ── INIT ─────────────────────────────────────────────────────
+window.onload = () => {
+  // Fecha actual
+  const now = new Date();
+  document.getElementById('dashDate').textContent =
+    now.toLocaleDateString('es-AR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+  // Fecha default en formularios
+  const hoy = now.toISOString().split('T')[0];
+  document.getElementById('remitoFecha').value = hoy;
+  document.getElementById('cajaFecha').value   = hoy;
+
+  // Cargar config en pantalla
+  document.getElementById('apiKey').value    = 'AIzaSyA4pwJ-qAatpYLPUX9yDoybHlzXrLojk1E';
+  document.getElementById('sheetId').value   = '1WNmoIQ2s4cMPSxL_IRhPhUWB1DGGyICciy9Fqgnmo74';
+  document.getElementById('precioFQ').value  = STATE.precioFQ || '';
+
+  // Ocultar splash
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(() => document.getElementById('splash').remove(), 500);
+  }, 1800);
+
+  // Cargar datos si hay API key
+  if (STATE.apiKey) {
+    loadDashboard();
+    loadAlertas();
+    loadRanking();
+    loadCuentas();
+    loadCaja();
+  }
+};
+
+// ── NAVEGACIÓN ───────────────────────────────────────────────
+function goTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  document.getElementById('screen-' + screen).classList.add('active');
+  const navBtn = document.getElementById('nav-' + screen);
+  if (navBtn) navBtn.classList.add('active');
+
+  const titles = {
+    dashboard: ['LE CRÈMME', 'Panel de gestión'],
+    remitos:   ['Remitos', 'Nueva entrega'],
+    cuentas:   ['Cuentas Cte.', 'Franquicias y proveedores'],
+    caja:      ['Flujo de Caja', 'Local Rondeau'],
+    ranking:   ['Ranking', 'Sabores más vendidos'],
+    compras:   ['Compras', 'Stock materia prima'],
+    salidas:   ['Retiro a Producción', 'Baja de stock MP'],
+    duolatte:  ['DUOLATTE', 'Cuenta corriente proveedor'],
+    config:    ['Configuración', 'API y parámetros'],
+  };
+  if (titles[screen]) {
+    document.getElementById('headerTitle').textContent = titles[screen][0];
+    document.getElementById('headerSub').textContent   = titles[screen][1];
+  }
+
+  STATE.history.push(STATE.currentScreen);
+  STATE.currentScreen = screen;
+}
+
+function goBack() {
+  if (STATE.history.length > 0) goTo(STATE.history.pop());
+}
+
+// ── TOAST ────────────────────────────────────────────────────
+function showToast(msg, duration=2200) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── FORMATEAR MONEDA ─────────────────────────────────────────
+function fmt(n) {
+  if (n === null || n === undefined || n === '') return '—';
+  let str = String(n);
+  // Manejar formato argentino: -$468.609,49
+  // Quitar símbolo $ y espacios
+  str = str.replace(/[$\s]/g, '');
+  // Si tiene punto como separador de miles y coma como decimal (formato AR)
+  // Ejemplo: -468.609,49 → -468609.49
+  if (str.includes(',')) {
+    // Formato argentino: puntos = miles, coma = decimal
+    str = str.replace(/\./g, '').replace(',', '.');
+  }
+  const num = parseFloat(str);
+  if (isNaN(num)) return '—';
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(num);
+}
+
+// ── API GOOGLE SHEETS ────────────────────────────────────────
+async function readRange(range) {
+  if (!STATE.apiKey) { showToast('⚙️ Configurá la API Key primero'); return null; }
+  const url = 'https://sheets.googleapis.com/v4/spreadsheets/' + STATE.sheetId + '/values/' + encodeURIComponent(range) + '?key=' + STATE.apiKey;
+  try {
+    const r = await fetch(url);
+    if (!r.ok) {
+      const err = await r.json();
+      console.error('Sheets API error:', err);
+      return null;
+    }
+    const d = await r.json();
+    return d.values || [];
+  } catch(e) {
+    console.error('readRange error:', e);
+    return null;
+  }
+}
+
+async function appendRow(sheetName, values) {
+  if (!STATE.apiKey) { showToast('⚙️ Configurá la API Key primero'); return false; }
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${STATE.sheetId}/values/${encodeURIComponent(sheetName)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS&key=${STATE.apiKey}`;
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ values: [values] })
+    });
+    return r.ok;
+  } catch(e) { console.error(e); return false; }
+}
+
+// ── SYNC ─────────────────────────────────────────────────────
+async function syncData() {
+  const btn = document.getElementById('btnSync');
+  btn.classList.add('spinning');
+  showToast('🔄 Sincronizando...');
+  await Promise.all([loadDashboard(), loadAlertas(), loadRanking(), loadCuentas(), loadCaja()]);
+  btn.classList.remove('spinning');
+  showToast('✅ Datos actualizados');
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────
+async function loadAlertas() {
+  const rows = await readRange("🏭 Stock MP!B5:G200");
+  if (!rows) return;
+  const el = document.getElementById('alertasStock');
+  const bajos = [], medios = [];
+  rows.forEach(r => {
+    const nombre = r[0]?.toString().trim();
+    const estado = r[2]?.toString().trim();
+    const stock  = parseFloat(r[3]) || 0;
+    const minimo = parseFloat(r[4]) || 0;
+    if (!nombre || !estado) return;
+    if (estado.includes('BAJO'))  bajos.push({nombre, stock, minimo});
+    else if (estado.includes('MEDIO')) medios.push({nombre, stock, minimo});
+  });
+
+  if (bajos.length === 0 && medios.length === 0) {
+    el.innerHTML = '<div style="background:var(--verde-l);border-radius:10px;padding:14px 16px;display:flex;gap:10px;align-items:center;margin-bottom:8px"><div style="font-size:20px">✅</div><div style="font-size:13px;color:var(--verde);font-weight:500">Todo el stock en niveles correctos</div></div>';
+    return;
+  }
+
+  let html = '';
+  if (bajos.length > 0) {
+    html += '<div style="background:var(--rojo-l);border-radius:10px;padding:12px 14px;margin-bottom:8px">';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--rojo);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🔴 Stock crítico (' + bajos.length + ')</div>';
+    bajos.forEach(i => {
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(192,57,91,0.1)">';
+      html += '<span style="font-size:13px;font-weight:500">' + i.nombre + '</span>';
+      html += '<span style="font-size:12px;color:var(--rojo);font-weight:700">' + i.stock.toFixed(1) + ' / mín ' + i.minimo.toFixed(1) + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  if (medios.length > 0) {
+    html += '<div style="background:var(--oro-l);border-radius:10px;padding:12px 14px;margin-bottom:8px">';
+    html += '<div style="font-size:11px;font-weight:700;color:var(--oro);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🟡 Stock medio (' + medios.length + ')</div>';
+    medios.slice(0,5).forEach(i => {
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(184,134,11,0.1)">';
+      html += '<span style="font-size:13px;font-weight:500">' + i.nombre + '</span>';
+      html += '<span style="font-size:12px;color:var(--oro);font-weight:700">' + i.stock.toFixed(1) + ' bultos</span>';
+      html += '</div>';
+    });
+    if (medios.length > 5) html += '<div style="font-size:11px;color:var(--oro);margin-top:4px">... y ' + (medios.length-5) + ' más</div>';
+    html += '</div>';
+  }
+  el.innerHTML = html;
+}
+
+async function loadDashboard() {
+  try {
+    // Leer el sheet ID correcto — puede ser diferente al del xlsx
+    const reads = await Promise.all([
+      readRange("📊 Dashboard!B8"),   // Saldo caja
+      readRange("📊 Dashboard!D8"),   // Banco Macro
+      readRange("📊 Dashboard!F8"),   // Mercado Pago
+      readRange("📊 Dashboard!D17"),  // Total a cobrar franquicias
+      readRange("📊 Dashboard!D27"),  // Valor total stock
+      readRange("📊 Dashboard!B16"),  // Martinolli
+      readRange("📊 Dashboard!D16"),  // Bv San Juan
+      readRange("📊 Dashboard!F16"),  // Rondeau
+    ]);
+
+    const get = (r) => r?.[0]?.[0] ?? null;
+
+    if (get(reads[0]) !== null) document.getElementById('kpi-caja').textContent   = fmt(get(reads[0]));
+    if (get(reads[1]) !== null) document.getElementById('kpi-banco').textContent  = fmt(get(reads[1]));
+    if (get(reads[3]) !== null) document.getElementById('kpi-cobrar').textContent = fmt(get(reads[3]));
+    if (get(reads[4]) !== null) document.getElementById('kpi-stock').textContent  = fmt(get(reads[4]));
+    if (get(reads[5]) !== null) document.getElementById('val-mart').textContent   = fmt(get(reads[5]));
+    if (get(reads[6]) !== null) document.getElementById('val-bsj').textContent    = fmt(get(reads[6]));
+    if (get(reads[7]) !== null) document.getElementById('val-ron').textContent    = fmt(get(reads[7]));
+
+    document.getElementById('saldo-mart').textContent = 'Saldo actual';
+    document.getElementById('saldo-bsj').textContent  = 'Saldo actual';
+    document.getElementById('saldo-ron').textContent  = 'Saldo actual';
+
+    const cajaVal = get(reads[0]);
+    if (cajaVal !== null) {
+      const cajaNum = parseFloat(String(cajaVal).replace(/[^0-9.,-]/g,'').replace(',','.'));
+      document.getElementById('kpi-caja').className = cajaNum >= 0 ? 'kpi-value verde' : 'kpi-value rojo';
+    }
+  } catch(e) { console.warn('Dashboard error', e); }
+}
+
+
+// ── SECCIÓN B — INSUMOS REMITO ───────────────────────────────
+const SEC_B_ITEMS = [];
+let SEC_B_INSUMOS_LOADED = false;
+
+async function loadSecBInsumos() {
+  if (SEC_B_INSUMOS_LOADED) return;
+  const rows = await readRange("LISTAS!A1:A200");
+  if (!rows) return;
+  const sel = document.getElementById('secBInsumo');
+  sel.innerHTML = '<option value="">— Seleccioná —</option>';
+  rows.forEach(r => {
+    const nom = r[0]?.toString().trim();
+    if (!nom) return;
+    const opt = document.createElement('option');
+    opt.value = nom;
+    opt.textContent = nom;
+    sel.appendChild(opt);
+  });
+  SEC_B_INSUMOS_LOADED = true;
+}
+
+async function agregarInsumoB() {
+  const insumo = document.getElementById('secBInsumo').value;
+  const cant   = parseFloat(document.getElementById('secBCantidad').value) || 0;
+  if (!insumo) { showToast('⚠️ Seleccioná un insumo'); return; }
+  if (cant <= 0) { showToast('⚠️ Ingresá una cantidad'); return; }
+
+  // Buscar precio desde Insumos col J (precio neto a FQ)
+  const precioRows = await readRange("📦 Insumos!B5:K300");
+  let precioNeto = 0, unidad = '', precioB = 0;
+  if (precioRows) {
+    const found = precioRows.find(r => r[0]?.toString().trim() === insumo);
+    if (found) {
+      unidad     = found[2] || '';
+      precioNeto = parseFloat(found[8]) || 0;
+      precioB    = precioNeto * 1.21;
+    }
+  }
+
+  const subtNeto  = cant * precioNeto;
+  const subtBruto = cant * precioB;
+
+  SEC_B_ITEMS.push({ insumo, unidad, cant, precioNeto, precioB, subtNeto, subtBruto });
+  renderSecB();
+
+  document.getElementById('secBInsumo').value = '';
+  document.getElementById('secBCantidad').value = '';
+  showToast('✅ ' + insumo + ' agregado');
+}
+
+function renderSecB() {
+  const el = document.getElementById('secBRows');
+  if (SEC_B_ITEMS.length === 0) {
+    el.innerHTML = '';
+    document.getElementById('secBTotal').style.display = 'none';
+    calcTotalGeneral();
+    return;
+  }
+
+  el.innerHTML = '<div style="background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.05)">' +
+    SEC_B_ITEMS.map((item, i) => 
+      '<div style="display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--gris-l)">' +
+      '<div style="flex:1">' +
+        '<div style="font-size:13px;font-weight:500">' + item.insumo + '</div>' +
+        '<div style="font-size:11px;color:var(--gris)">' + item.cant + (item.unidad ? ' × ' + item.unidad : '') + ' · ' + fmt(item.precioNeto) + '/u</div>' +
+      '</div>' +
+      '<div style="text-align:right;margin-right:10px">' +
+        '<div style="font-size:13px;font-weight:700;color:var(--rosa)">' + fmt(item.subtNeto) + '</div>' +
+      '</div>' +
+      '<span onclick="quitarItemB(' + i + ')" style="color:var(--rojo);font-size:18px;cursor:pointer;padding:4px">✕</span>' +
+      '</div>'
+    ).join('') + '</div>';
+
+  const totalNeto = SEC_B_ITEMS.reduce((s,i) => s+i.subtNeto, 0);
+  document.getElementById('secBTotalVal').textContent = fmt(totalNeto);
+  document.getElementById('secBCount').textContent = SEC_B_ITEMS.length + ' item' + (SEC_B_ITEMS.length>1?'s':'');
+  document.getElementById('secBTotal').style.display = 'flex';
+  calcTotalGeneral();
+}
+
+function quitarItemB(i) {
+  SEC_B_ITEMS.splice(i,1);
+  renderSecB();
+}
+
+function calcTotalGeneral() {
+  const totalA = STATE.remitoItems.reduce((s,i) => s+i.subtotal, 0);
+  const totalB = SEC_B_ITEMS.reduce((s,i) => s+i.subtNeto, 0);
+  const total  = totalA + totalB;
+  const descA  = STATE.remitoItems.length + ' tacho' + (STATE.remitoItems.length!==1?'s':'');
+  const descB  = SEC_B_ITEMS.length > 0 ? ' + ' + SEC_B_ITEMS.length + ' insumo' + (SEC_B_ITEMS.length!==1?'s':'') : '';
+
+  document.getElementById('remitoTotalGeneralVal').textContent = fmt(total);
+  document.getElementById('remitoTotalDesc').textContent = descA + descB;
+
+  const show = STATE.remitoItems.length > 0 || SEC_B_ITEMS.length > 0;
+  document.getElementById('remitoTotalGeneral').style.display = show ? 'flex' : 'none';
+}
+
+// ── REMITOS ──────────────────────────────────────────────────
+const SABORES_MAP = {};
+
+async function loadSaboresMap() {
+  if (Object.keys(SABORES_MAP).length > 0) return;
+  const rows = await readRange("LISTAS!C2:D120");
+  if (!rows) return;
+  rows.forEach(r => {
+    if (r[0] && r[1]) SABORES_MAP[String(r[0]).padStart(5,'0')] = r[1];
+  });
+}
+
+function selectFranq(el, franq) {
+  document.querySelectorAll('.franq-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  STATE.currentFranq = franq;
+}
+
+function abrirCamara() {
+  const modal = document.getElementById('cameraModal');
+  modal.style.display = 'block';
+  document.getElementById('scanResultado').style.display = 'none';
+
+  Quagga.init({
+    inputStream: {
+      name: "Live",
+      type: "LiveStream",
+      target: document.getElementById('cameraViewfinder'),
+      constraints: {
+        facingMode: "environment",  // cámara trasera
+        width: { min: 640 },
+        height: { min: 480 },
+      },
+    },
+    decoder: {
+      readers: ["ean_reader", "ean_8_reader", "code_128_reader"],
+      multiple: false
+    },
+    locate: true,
+    numOfWorkers: 2,
+    frequency: 10,
+  }, function(err) {
+    if (err) {
+      console.error(err);
+      showToast('❌ No se pudo acceder a la cámara');
+      cerrarCamara();
+      return;
+    }
+    Quagga.start();
+  });
+
+  Quagga.offDetected();
+  Quagga.onDetected(async function(result) {
+    const codigo = result.codeResult.code;
+    if (!codigo || codigo.length < 10) return;
+
+    // Vibrar si el dispositivo lo soporta
+    if (navigator.vibrate) navigator.vibrate(100);
+
+    // Mostrar resultado en pantalla
+    await loadSaboresMap();
+    const codStr = codigo.toString().padStart(13,'0');
+    const codSabor = codStr.substring(1,6);
+    const nombre = SABORES_MAP[codSabor] || 'Código: ' + codSabor;
+    const kg = parseInt(codStr.substring(7,13)) / 1000;
+
+    document.getElementById('scanResultadoCod').textContent = codigo;
+    document.getElementById('scanResultadoNombre').textContent = nombre + ' — ' + kg.toFixed(3) + ' kg';
+    document.getElementById('scanResultado').style.display = 'block';
+
+    // Detener y cerrar después de 1.5 segundos
+    setTimeout(async () => {
+      Quagga.stop();
+      cerrarCamara();
+      await agregarTacho(codigo);
+    }, 1500);
+  });
+}
+
+function cerrarCamara() {
+  try { Quagga.stop(); } catch(e) {}
+  document.getElementById('cameraModal').style.display = 'none';
+}
+
+async function procesarManual() {
+  const inp = document.getElementById('codigoManual');
+  const codigo = inp.value.trim();
+  if (!codigo) { showToast('⚠️ Ingresá un código'); return; }
+  inp.value = '';
+  await agregarTacho(codigo);
+}
+
+async function procesarManual() {
+  const inp = document.getElementById('codigoManual');
+  const codigo = inp.value.trim();
+  if (!codigo) { showToast('⚠️ Ingresá un código'); return; }
+  inp.value = '';
+  await agregarTacho(codigo);
+}
+
+async function agregarTacho(codigo) {
+  await loadSaboresMap();
+  // Estructura: 2[00027]0[006717]
+  const codStr = codigo.toString().padStart(13,'0');
+  const codSabor = codStr.substring(1,6);
+  const pesoGr   = parseInt(codStr.substring(7,13));
+  const kg        = pesoGr / 1000;
+
+  const nombreSabor = SABORES_MAP[codSabor] || `Cód. ${codSabor}`;
+  const precio       = STATE.precioFQ || 0;
+  const subtotal     = kg * precio;
+
+  STATE.remitoItems.push({ codigo, codSabor, nombreSabor, kg, precio, subtotal });
+  renderRemitoTabla();
+  showToast(`✅ ${nombreSabor} — ${kg.toFixed(3)} kg`);
+}
+
+function renderRemitoTabla() {
+  const rows = document.getElementById('remitoRows');
+  const tabla = document.getElementById('remitoTabla');
+  const totalBox = document.getElementById('remitoTotalBox');
+  const actions = document.getElementById('remitoActions');
+
+  if (STATE.remitoItems.length === 0 && SEC_B_ITEMS.length === 0) {
+    tabla.style.display = 'none';
+    totalBox.style.display = 'none';
+    actions.style.display = 'none';
+    document.getElementById('seccionB').style.display = 'none';
+    document.getElementById('remitoTotalGeneral').style.display = 'none';
+    return;
+  }
+
+  if (STATE.remitoItems.length > 0) {
+    tabla.style.display = 'block';
+    totalBox.style.display = 'flex';
+  }
+
+  // Mostrar sección B y cargar insumos
+  document.getElementById('seccionB').style.display = 'block';
+  loadSecBInsumos();
+  actions.style.display = 'block';
+  calcTotalGeneral();
+
+  rows.innerHTML = STATE.remitoItems.map((item, i) => `
+    <div class="remito-row">
+      <div>
+        <div class="sabor">${item.nombreSabor}</div>
+        <div style="font-size:10px;color:var(--gris)">${item.codigo}</div>
+      </div>
+      <div class="kg">${item.kg.toFixed(3)}</div>
+      <div>
+        <div class="subtotal">${fmt(item.subtotal)}</div>
+        <div style="font-size:10px;text-align:right">
+          <span onclick="quitarItem(${i})" style="color:var(--rojo);cursor:pointer">✕</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  const total = STATE.remitoItems.reduce((s,i) => s + i.subtotal, 0);
+  const totalKg = STATE.remitoItems.reduce((s,i) => s + i.kg, 0);
+  document.getElementById('remitoTotalVal').textContent = fmt(total);
+  document.getElementById('remitoCount').textContent =
+    `${STATE.remitoItems.length} tacho${STATE.remitoItems.length>1?'s':''} · ${totalKg.toFixed(3)} kg`;
+}
+
+function quitarItem(i) {
+  STATE.remitoItems.splice(i, 1);
+  renderRemitoTabla();
+}
+
+async function confirmarRemito() {
+  if (STATE.remitoItems.length === 0) { showToast('⚠️ No hay tachos cargados'); return; }
+  const num   = document.getElementById('remitoNum').value || 'RM-?';
+  const fecha = document.getElementById('remitoFecha').value;
+  const franq = STATE.currentFranq;
+
+  showToast('⏳ Guardando en Google Sheets...');
+
+  // Buscar hoja correcta
+  const sheetMap = { 'Martinolli':'📋 Martinolli', 'Bv San Juan':'📋 Bv San Juan', 'Rondeau':'📋 Rondeau' };
+  const sheetName = sheetMap[franq];
+
+  let ok = true;
+  for (const item of STATE.remitoItems) {
+    const row = [num, fecha, item.codigo, item.codSabor, item.nombreSabor,
+                 item.kg, '', item.precio, '', item.subtotal, '', fecha, '', ''];
+    const res = await appendRow(sheetName, row);
+    if (!res) { ok = false; break; }
+  }
+
+  if (ok) {
+    showToast(`✅ Remito ${num} guardado — ${STATE.remitoItems.length} tachos`);
+    limpiarRemito();
+    // Auto-incrementar número
+    const match = num.match(/(\d+)$/);
+    if (match) {
+      const next = String(parseInt(match[1])+1).padStart(4,'0');
+      document.getElementById('remitoNum').value = num.replace(/\d+$/, next);
+    }
+  } else {
+    showToast('❌ Error al guardar. Verificá la API Key');
+  }
+}
+
+function limpiarRemito() {
+  STATE.remitoItems = [];
+  SEC_B_ITEMS.length = 0;
+  renderRemitoTabla();
+  renderSecB();
+  document.getElementById('seccionB').style.display = 'none';
+  document.getElementById('remitoTotalGeneral').style.display = 'none';
+}
+
+async function cerrarRemito() {
+  if (STATE.remitoItems.length === 0) { showToast('⚠️ No hay tachos cargados'); return; }
+  const num   = document.getElementById('remitoNum').value || 'RM-?';
+  const fecha = document.getElementById('remitoFecha').value;
+  const franq = STATE.currentFranq;
+
+  // Mapeo de hojas de historial
+  const histMap = {
+    'Martinolli':  '📜 Hist. Martinolli',
+    'Bv San Juan': '📜 Hist. Bv San Juan',
+    'Rondeau':     '📜 Hist. Rondeau'
+  };
+  const histInsMap = {
+    'Martinolli':  '📜 Hist. Insumos Martinolli',
+    'Bv San Juan': '📜 Hist. Insumos Bv San Juan',
+    'Rondeau':     '📜 Hist. Insumos Rondeau'
+  };
+
+  showToast('⏳ Cerrando remito...');
+
+  let ok = true;
+
+  // Pasar helados (Sección A) al historial de helados
+  for (const item of STATE.remitoItems) {
+    const row = [num, fecha, item.codSabor, item.codigo, item.nombreSabor,
+                 item.kg, '', item.precio, '', item.subtotal, '', fecha, '', ''];
+    const res = await appendRow(histMap[franq], row);
+    if (!res) { ok = false; break; }
+  }
+
+  // Pasar insumos (Sección B) al historial de insumos
+  // Leer sección B del remito activo desde Google Sheets
+  if (ok) {
+    const sheetMap = { 'Martinolli':'📋 Martinolli', 'Bv San Juan':'📋 Bv San Juan', 'Rondeau':'📋 Rondeau' };
+    const secBRows = await readRange(sheetMap[franq] + '!C103:J132');
+    if (secBRows) {
+      for (const r of secBRows) {
+        const insumo = r[0]?.toString().trim();
+        const cant   = r[2];
+        if (!insumo || !cant) continue;
+        const rowIns = [num, fecha, insumo, r[1]||'', cant, r[3]||0, r[4]||0, r[5]||0, r[6]||0, fecha, ''];
+        await appendRow(histInsMap[franq], rowIns);
+      }
+    }
+  }
+
+  if (ok) {
+    // Limpiar remito activo en Google Sheets — celdas amarillas sección A (col D = barcode)
+    const sheetMap2 = { 'Martinolli':'📋 Martinolli', 'Bv San Juan':'📋 Bv San Juan', 'Rondeau':'📋 Rondeau' };
+    const clearUrl = 'https://sheets.googleapis.com/v4/spreadsheets/' + STATE.sheetId +
+      '/values/' + encodeURIComponent(sheetMap2[franq] + '!D9:D98') +
+      ':clear?key=' + STATE.apiKey;
+    await fetch(clearUrl, { method: 'POST' });
+
+    // Limpiar sección B (col C = insumo, col E = cantidad)
+    const clearUrlB = 'https://sheets.googleapis.com/v4/spreadsheets/' + STATE.sheetId +
+      '/values/' + encodeURIComponent(sheetMap2[franq] + '!C103:E132') +
+      ':clear?key=' + STATE.apiKey;
+    await fetch(clearUrlB, { method: 'POST' });
+
+    showToast('✅ Remito ' + num + ' cerrado y archivado');
+    limpiarRemito();
+
+    // Auto-incrementar número de remito
+    const match = num.match(/(\d+)$/);
+    if (match) {
+      const next = String(parseInt(match[1])+1).padStart(4,'0');
+      document.getElementById('remitoNum').value = num.replace(/\d+$/, next);
+    }
+  } else {
+    showToast('❌ Error al cerrar remito');
+  }
+}
+
+// ── CUENTAS CORRIENTES ───────────────────────────────────────
+async function loadCuentas() {
+  renderCuentas(STATE.currentCta);
+}
+
+async function renderCuentas(cta) {
+  STATE.currentCta = cta;
+  const el = document.getElementById('cta-content');
+  el.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+
+  const sheetMap = {
+    mart:     { sheet: '💳 Cta. Cte. Franquicias', nombre: 'Martinolli',  col: 'H', saldoCol: 'C4' },
+    bsj:      { sheet: '💳 Cta. Cte. Franquicias', nombre: 'Bv San Juan', col: 'H', saldoCol: 'N4' },
+    ron:      { sheet: '💳 Cta. Cte. Franquicias', nombre: 'Rondeau',     col: 'H', saldoCol: 'Y4' },
+    duolatte: { sheet: '💳 Cta. Cte. DUOLATTE',    nombre: 'DUOLATTE',    col: 'H', saldoCol: 'D4' },
+  };
+
+  const cfg = sheetMap[cta];
+  if (!cfg) return;
+
+  // Leer saldo
+  const saldoVals = await readRange(`${cfg.sheet}!${cfg.saldoCol}`);
+  const saldo = saldoVals?.[0]?.[0];
+
+  // Leer últimos 20 movimientos (buscar en cols A-J)
+  const rows = await readRange(`${cfg.sheet}!A5:J50`);
+
+  const saldoNum = parseFloat(String(saldo || '0').replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+  const saldoColor = saldoNum >= 0 ? 'verde' : 'rojo';
+
+  let movHtml = '';
+  if (rows && rows.length > 0) {
+    const movs = rows.filter(r => r[0] || r[1]).slice(-15).reverse();
+    movHtml = movs.map(r => {
+      const fecha    = r[1] || '';
+      const concepto = r[3] || r[2] || '—';
+      const debe     = parseFloat(r[5]) || 0;
+      const haber    = parseFloat(r[6]) || 0;
+      const tipo     = debe > 0 ? 'rojo' : 'verde';
+      const monto    = debe > 0 ? `-${fmt(debe)}` : `+${fmt(haber)}`;
+      return `
+        <div class="list-row">
+          <div class="list-row-left">
+            <div class="list-icon ${tipo}-bg">${debe > 0 ? '📤' : '📥'}</div>
+            <div>
+              <div class="list-name" style="font-size:13px">${concepto}</div>
+              <div class="list-sub">${fecha}</div>
+            </div>
+          </div>
+          <div class="list-value ${tipo}" style="font-size:14px">${monto}</div>
+        </div>`;
+    }).join('');
+  }
+
+  el.innerHTML = `
+    <div style="margin:0 16px 12px;background:${saldoNum>=0?'var(--verde-l)':'var(--rojo-l)'};border-radius:var(--radius-s);padding:16px">
+      <div style="font-size:11px;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:.5px">Saldo actual — ${cfg.nombre}</div>
+      <div style="font-size:28px;font-weight:700;color:var(--${saldoColor});margin-top:4px">${fmt(saldo)}</div>
+    </div>
+    <div class="section-title">Últimos movimientos</div>
+    <div class="list-section" style="padding-bottom:8px">
+      <div class="list-card">${movHtml || '<div class="empty-state"><div class="e-icon">📭</div><h3>Sin movimientos</h3><p>Aún no hay registros</p></div>'}</div>
+    </div>`;
+}
+
+function selectTab(el, cta) {
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderCuentas(cta);
+}
+
+function mostrarFormMovimiento() {
+  showToast('Usá la planilla para registrar movimientos');
+}
+
+// ── FLUJO DE CAJA ────────────────────────────────────────────
+async function loadCaja() {
+  const vals = await readRange("💵 Flujo de Caja Rondeau!B8:K8");
+  if (vals?.[0]) {
+    document.getElementById('cajaSaldo').textContent = fmt(vals[0][0]);
+    document.getElementById('cajaBanco').textContent = fmt(vals[0][4]);
+    document.getElementById('cajaMP').textContent    = fmt(vals[0][8]);
+  }
+
+  // Últimos movimientos
+  const rows = await readRange("💵 Flujo de Caja Rondeau!B6:K30");
+  const el = document.getElementById('cajaMovimientos');
+  if (!rows || rows.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="e-icon">📭</div><h3>Sin movimientos</h3></div>';
+    return;
+  }
+
+  const movs = rows.filter(r => r[0] || r[2]).slice(-12).reverse();
+  el.innerHTML = '<div class="list-section" style="padding-bottom:8px"><div class="list-card">' +
+    movs.map(r => {
+      const fecha   = r[0] || '';
+      const turno   = r[1] || '';
+      const concepto= r[2] || '—';
+      const ingreso = parseFloat(r[4]) || 0;
+      const egreso  = parseFloat(r[5]) || 0;
+      const esIngreso = ingreso > 0;
+      return `
+        <div class="list-row">
+          <div class="list-row-left">
+            <div class="list-icon ${esIngreso?'verde':'rojo'}-bg">${esIngreso?'📥':'📤'}</div>
+            <div>
+              <div class="list-name" style="font-size:13px">${concepto}</div>
+              <div class="list-sub">${fecha}${turno?' · '+turno:''}</div>
+            </div>
+          </div>
+          <div class="list-value ${esIngreso?'verde':'rojo'}" style="font-size:14px">
+            ${esIngreso ? '+'+fmt(ingreso) : '-'+fmt(egreso)}
+          </div>
+        </div>`;
+    }).join('') + '</div></div>';
+}
+
+async function guardarMovCaja() {
+  const fecha    = document.getElementById('cajaFecha').value;
+  const turno    = document.getElementById('cajaTurno').value;
+  const concepto = document.getElementById('cajaConcepto').value;
+  const tipo     = document.getElementById('cajaTipo').value;
+  const ingreso  = document.getElementById('cajaIngreso').value || '';
+  const egreso   = document.getElementById('cajaEgreso').value || '';
+
+  if (!concepto) { showToast('⚠️ Ingresá un concepto'); return; }
+  if (!ingreso && !egreso) { showToast('⚠️ Ingresá un monto'); return; }
+
+  showToast('⏳ Guardando...');
+  const row = ['', fecha, turno, concepto, tipo, ingreso, egreso, '', '', ''];
+  const ok = await appendRow('💵 Flujo de Caja Rondeau', row);
+
+  if (ok) {
+    showToast('✅ Movimiento guardado');
+    document.getElementById('cajaConcepto').value = '';
+    document.getElementById('cajaIngreso').value  = '';
+    document.getElementById('cajaEgreso').value   = '';
+    await loadCaja();
+  } else {
+    showToast('❌ Error. Verificá la API Key');
+  }
+}
+
+// ── RANKING ──────────────────────────────────────────────────
+async function loadRanking() {
+  const rows = await readRange("📈 Ranking Sabores!B5:H60");
+  if (!rows || rows.length === 0) return;
+
+  const datos = rows
+    .filter(r => r[0] && r[5])
+    .map(r => ({ nombre: r[0], tipo: r[1]||'', total: parseFloat(r[5])||0, rank: parseInt(r[6])||99 }))
+    .filter(r => r.total > 0)
+    .sort((a,b) => b.total - a.total)
+    .slice(0, 20);
+
+  if (datos.length === 0) {
+    document.getElementById('rankingList').innerHTML =
+      '<div class="empty-state"><div class="e-icon">📊</div><h3>Sin datos</h3><p>Aún no hay ventas registradas</p></div>';
+    return;
+  }
+
+  const maxKg = datos[0].total;
+
+  document.getElementById('rankingList').innerHTML = datos.map((s, i) => {
+    const rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other';
+    const pct = Math.round((s.total / maxKg) * 100);
+    return `
+      <div class="ranking-item">
+        <div class="rank-num ${rankClass}">${i+1}</div>
+        <div class="rank-name">
+          ${s.nombre}
+          <div style="font-size:10px;color:var(--gris)">${s.tipo}</div>
+        </div>
+        <div class="rank-bar-wrap">
+          <div class="rank-bar"><div class="rank-bar-fill" style="width:${pct}%"></div></div>
+          <div style="font-size:10px;color:var(--gris);margin-top:2px;text-align:right">${pct}%</div>
+        </div>
+        <div class="rank-kg">${s.total.toFixed(1)} kg</div>
+      </div>`;
+  }).join('') + '<div class="spacer-md"></div>';
+}
+
+
+// ── COMPRAS / STOCK MP ───────────────────────────────────────
+const INSUMOS_DATA = []; // {nombre, fila_insumos, fila_stock, stock_actual, precio_actual}
+
+async function loadInsumosList() {
+  if (INSUMOS_DATA.length > 0) return;
+  
+  // Leer nombres de insumos desde LISTAS col A
+  const names = await readRange("LISTAS!A1:A200");
+  // Leer stock actual desde Stock MP col B (nombre) y E (stock)
+  const stockRows = await readRange("🏭 Stock MP!A5:I200");
+  // Leer precios desde Insumos col B (nombre) y F (precio neto bulto)
+  const insRows = await readRange("📦 Insumos!A5:F200");
+
+  if (!names) return;
+
+  // Mapear fila de stock por nombre
+  const stockMap = {};
+  if (stockRows) {
+    stockRows.forEach((r, i) => {
+      if (r[1] && r[1].toString().trim()) {
+        stockMap[r[1].toString().trim()] = {
+          filaStock: i + 5,  // fila real en Sheet (base 1, +4 offset header)
+          stockActual: parseFloat(r[4]) || 0
+        };
+      }
+    });
+  }
+
+  // Mapear fila de insumos por nombre
+  const insMap = {};
+  if (insRows) {
+    insRows.forEach((r, i) => {
+      if (r[1] && r[1].toString().trim()) {
+        insMap[r[1].toString().trim()] = {
+          filaIns: i + 5,
+          precioActual: parseFloat(r[5]) || 0
+        };
+      }
+    });
+  }
+
+  // Poblar select
+  const sel = document.getElementById('compraInsumo');
+  sel.innerHTML = '<option value="">— Seleccioná un insumo —</option>';
+
+  names.forEach((r, i) => {
+    const nombre = r[0]?.toString().trim();
+    if (!nombre) return;
+    const stock = stockMap[nombre] || {};
+    const ins   = insMap[nombre]   || {};
+    INSUMOS_DATA.push({
+      nombre,
+      filaStock: stock.filaStock || null,
+      filaIns:   ins.filaIns     || null,
+      stockActual:  stock.stockActual  || 0,
+      precioActual: ins.precioActual   || 0,
+    });
+    const opt = document.createElement('option');
+    opt.value = INSUMOS_DATA.length - 1;
+    opt.textContent = nombre;
+    sel.appendChild(opt);
+  });
+}
+
+function onInsumoChange() {
+  const idx = document.getElementById('compraInsumo').value;
+  if (idx === '') {
+    document.getElementById('compraInfo').style.display = 'none';
+    document.getElementById('compraPreview').style.display = 'none';
+    document.getElementById('btnConfirmarCompra').disabled = true;
+    document.getElementById('btnConfirmarCompra').style.opacity = '0.5';
+    return;
+  }
+  const ins = INSUMOS_DATA[parseInt(idx)];
+  document.getElementById('infoStockActual').textContent = ins.stockActual.toFixed(2);
+  document.getElementById('infoPrecioActual').textContent = fmt(ins.precioActual);
+  document.getElementById('compraInfo').style.display = 'block';
+  calcularCompra();
+}
+
+function calcularCompra() {
+  const idx = document.getElementById('compraInsumo').value;
+  const cant = parseFloat(document.getElementById('compraCantidad').value) || 0;
+  const precio = parseFloat(document.getElementById('compraPrecio').value) || 0;
+
+  if (idx === '' || cant <= 0) {
+    document.getElementById('compraPreview').style.display = 'none';
+    document.getElementById('btnConfirmarCompra').disabled = true;
+    document.getElementById('btnConfirmarCompra').style.opacity = '0.5';
+    return;
+  }
+
+  const ins = INSUMOS_DATA[parseInt(idx)];
+  const nuevoStock = ins.stockActual + cant;
+  const nuevoPrecio = precio > 0 ? precio : ins.precioActual;
+  const total = cant * nuevoPrecio;
+
+  document.getElementById('previewStock').textContent = nuevoStock.toFixed(2);
+  document.getElementById('previewPrecio').textContent = fmt(nuevoPrecio);
+  document.getElementById('previewTotal').textContent = fmt(total);
+  document.getElementById('compraPreview').style.display = 'block';
+
+  document.getElementById('btnConfirmarCompra').disabled = false;
+  document.getElementById('btnConfirmarCompra').style.opacity = '1';
+}
+
+async function confirmarCompra() {
+  const idx     = document.getElementById('compraInsumo').value;
+  const cant    = parseFloat(document.getElementById('compraCantidad').value) || 0;
+  const precio  = parseFloat(document.getElementById('compraPrecio').value) || 0;
+  const factura = document.getElementById('compraFactura').value || '';
+  const responsableCompra = document.getElementById('compraResponsable').value || '—';
+
+  if (idx === '' || cant <= 0) { showToast('⚠️ Completá los datos'); return; }
+
+  const ins = INSUMOS_DATA[parseInt(idx)];
+  const nuevoStock  = ins.stockActual + cant;
+  const nuevoPrecio = precio > 0 ? precio : ins.precioActual;
+
+  showToast('⏳ Actualizando planilla...');
+  document.getElementById('btnConfirmarCompra').disabled = true;
+
+  let ok1 = true, ok2 = true;
+
+  // Actualizar precio en Insumos col F
+  if (precio > 0 && ins.filaIns) {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${STATE.sheetId}/values/${encodeURIComponent("📦 Insumos!F" + ins.filaIns)}?valueInputOption=USER_ENTERED&key=${STATE.apiKey}`;
+    try {
+      const r = await fetch(url, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ values: [[nuevoPrecio]] })
+      });
+      ok1 = r.ok;
+    } catch(e) { ok1 = false; }
+  }
+
+  // Actualizar stock en Stock MP col E
+  if (ins.filaStock) {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${STATE.sheetId}/values/${encodeURIComponent("🏭 Stock MP!E" + ins.filaStock)}?valueInputOption=USER_ENTERED&key=${STATE.apiKey}`;
+    try {
+      const r = await fetch(url, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ values: [[nuevoStock]] })
+      });
+      ok2 = r.ok;
+    } catch(e) { ok2 = false; }
+  }
+
+  if (ok1 && ok2) {
+    // Actualizar datos locales
+    ins.stockActual  = nuevoStock;
+    if (precio > 0) ins.precioActual = nuevoPrecio;
+
+    // Guardar en Google Sheets Log Compras
+    const fechaHoy = new Date().toLocaleDateString('es-AR');
+    const totalNeto = cant * nuevoPrecio;
+    const totalBruto = totalNeto * 1.21;
+    const logRowComp = [fechaHoy, ins.nombre, cant, nuevoPrecio, totalNeto, totalBruto, responsableCompra, factura];
+    await appendRow('📥 Log Compras', logRowComp);
+
+    // También guardar local como cache
+    const historial = JSON.parse(localStorage.getItem('lc_compras') || '[]');
+    historial.unshift({
+      fecha: fechaHoy,
+      insumo: ins.nombre,
+      cantidad: cant,
+      precio: nuevoPrecio,
+      total: totalNeto,
+      factura,
+      responsable: responsableCompra
+    });
+    localStorage.setItem('lc_compras', JSON.stringify(historial.slice(0, 50)));
+
+    showToast('✅ ¡Compra registrada! Stock y precio actualizados');
+    renderCompraHistorial();
+
+    // Limpiar form
+    document.getElementById('compraInsumo').value = '';
+    document.getElementById('compraCantidad').value = '';
+    document.getElementById('compraPrecio').value = '';
+    document.getElementById('compraFactura').value = '';
+    document.getElementById('compraResponsable').value = '';
+    document.getElementById('compraInfo').style.display = 'none';
+    document.getElementById('compraPreview').style.display = 'none';
+  } else {
+    showToast('❌ Error al actualizar. Verificá la conexión');
+  }
+
+  document.getElementById('btnConfirmarCompra').disabled = false;
+  document.getElementById('btnConfirmarCompra').style.opacity = '1';
+}
+
+function renderCompraHistorial() {
+  const historial = JSON.parse(localStorage.getItem('lc_compras') || '[]');
+  const el = document.getElementById('compraHistorial');
+  if (historial.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="e-icon">📦</div><h3>Sin compras registradas</h3><p>Las compras que registres aparecerán acá</p></div>';
+    return;
+  }
+  el.innerHTML = '<div class="list-section" style="padding-bottom:8px"><div class="list-card">' +
+    historial.slice(0,10).map(c => `
+      <div class="list-row">
+        <div class="list-row-left">
+          <div class="list-icon verde-bg">📦</div>
+          <div>
+            <div class="list-name" style="font-size:13px">${c.insumo}</div>
+            <div class="list-sub">${c.fecha}${(c.factura ? ' · ' + c.factura : '') + (c.responsable && c.responsable !== '—' ? ' · ' + c.responsable : '')}</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;font-weight:700;color:var(--verde)">${fmt(c.total)}</div>
+          <div style="font-size:10px;color:var(--gris)">${c.cantidad} bultos · ${fmt(c.precio)}/u</div>
+        </div>
+      </div>`).join('') +
+    '</div></div>';
+}
+
+// Cargar insumos cuando se va a la pantalla de compras
+const _origGoTo = goTo;
+// Patch goTo para cargar datos de compras
+const origGoTo = goTo;
+goTo = function(screen) {
+  origGoTo(screen);
+  if (screen === 'compras') {
+    loadInsumosList();
+    renderCompraHistorial();
+  }
+};
+
+
+// ── SALIDAS / RETIRO A PRODUCCIÓN ────────────────────────────
+const INSUMOS_DATA_SAL = []; // reutilizamos estructura similar a compras
+
+async function loadInsumosListSalidas() {
+  // Reutilizar INSUMOS_DATA si ya está cargado
+  if (INSUMOS_DATA.length > 0) {
+    const sel = document.getElementById('salidaInsumo');
+    sel.innerHTML = '<option value="">— Seleccioná un insumo —</option>';
+    INSUMOS_DATA.forEach((ins, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = ins.nombre;
+      sel.appendChild(opt);
+    });
+    return;
+  }
+  // Si no está cargado, cargar igual que compras
+  await loadInsumosList();
+  const sel = document.getElementById('salidaInsumo');
+  sel.innerHTML = '<option value="">— Seleccioná un insumo —</option>';
+  INSUMOS_DATA.forEach((ins, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = ins.nombre;
+    sel.appendChild(opt);
+  });
+}
+
+async function onSalidaInsumoChange() {
+  const idx = document.getElementById('salidaInsumo').value;
+  if (idx === '') {
+    document.getElementById('salidaInfo').style.display = 'none';
+    document.getElementById('salidaPreview').style.display = 'none';
+    document.getElementById('btnConfirmarSalida').disabled = true;
+    document.getElementById('btnConfirmarSalida').style.opacity = '0.5';
+    return;
+  }
+  const ins = INSUMOS_DATA[parseInt(idx)];
+
+  // Leer stock mínimo de la planilla
+  let stockMin = 0;
+  if (ins.filaStock) {
+    const minVals = await readRange('🏭 Stock MP!F' + ins.filaStock);
+    stockMin = parseFloat(minVals?.[0]?.[0]) || 0;
+  }
+  ins.stockMin = stockMin;
+
+  // Color del box según estado
+  const box = document.getElementById('salidaInfo');
+  const stockNum = ins.stockActual;
+  if (stockNum <= stockMin) {
+    box.style.background = 'var(--rojo-l)';
+    document.getElementById('salidaStockActual').style.color = 'var(--rojo)';
+  } else if (stockNum <= stockMin * 1.3) {
+    box.style.background = 'var(--oro-l)';
+    document.getElementById('salidaStockActual').style.color = 'var(--oro)';
+  } else {
+    box.style.background = 'var(--verde-l)';
+    document.getElementById('salidaStockActual').style.color = 'var(--verde)';
+  }
+
+  document.getElementById('salidaStockActual').textContent = ins.stockActual.toFixed(2);
+  document.getElementById('salidaStockMin').textContent = stockMin.toFixed(2);
+  document.getElementById('salidaInfo').style.display = 'block';
+  calcularSalida();
+}
+
+function calcularSalida() {
+  const idx  = document.getElementById('salidaInsumo').value;
+  const cant = parseFloat(document.getElementById('salidaCantidad').value) || 0;
+  if (idx === '' || cant <= 0) {
+    document.getElementById('salidaPreview').style.display = 'none';
+    document.getElementById('btnConfirmarSalida').disabled = true;
+    document.getElementById('btnConfirmarSalida').style.opacity = '0.5';
+    return;
+  }
+  const ins = INSUMOS_DATA[parseInt(idx)];
+  const nuevoStock = ins.stockActual - cant;
+
+  document.getElementById('salidaDesde').textContent = ins.stockActual.toFixed(2);
+  
+  const hastaEl = document.getElementById('salidaHasta');
+  hastaEl.textContent = nuevoStock.toFixed(2) + ' bultos';
+  hastaEl.style.color = nuevoStock < 0 ? '#FF6666' : nuevoStock <= (ins.stockMin||0) ? '#FFB366' : '#4ADE80';
+
+  // Alerta si queda bajo mínimo
+  const alertEl = document.getElementById('salidaAlerta');
+  alertEl.style.display = nuevoStock <= (ins.stockMin||0) ? 'block' : 'none';
+
+  document.getElementById('salidaPreview').style.display = 'block';
+
+  // Deshabilitar si el resultado es negativo
+  if (nuevoStock < 0) {
+    document.getElementById('btnConfirmarSalida').disabled = true;
+    document.getElementById('btnConfirmarSalida').style.opacity = '0.5';
+    document.getElementById('btnConfirmarSalida').textContent = '⚠️ Stock insuficiente';
+  } else {
+    document.getElementById('btnConfirmarSalida').disabled = false;
+    document.getElementById('btnConfirmarSalida').style.opacity = '1';
+    document.getElementById('btnConfirmarSalida').textContent = '✓ Confirmar retiro y actualizar stock';
+  }
+}
+
+async function confirmarSalida() {
+  const idx    = document.getElementById('salidaInsumo').value;
+  const cant   = parseFloat(document.getElementById('salidaCantidad').value) || 0;
+  const motivo = document.getElementById('salidaMotivo').value || 'Retiro a producción';
+  const responsableSalida = document.getElementById('salidaResponsable').value || '—';
+
+  if (idx === '' || cant <= 0) { showToast('⚠️ Completá los datos'); return; }
+
+  const ins = INSUMOS_DATA[parseInt(idx)];
+  const nuevoStock = ins.stockActual - cant;
+  if (nuevoStock < 0) { showToast('⚠️ No hay suficiente stock'); return; }
+
+  showToast('⏳ Actualizando stock...');
+  document.getElementById('btnConfirmarSalida').disabled = true;
+
+  let ok = true;
+  if (ins.filaStock) {
+    const url = "https://sheets.googleapis.com/v4/spreadsheets/" + STATE.sheetId + "/values/" + encodeURIComponent("🏭 Stock MP!E" + ins.filaStock) + "?valueInputOption=USER_ENTERED&key=" + STATE.apiKey;
+    try {
+      const r = await fetch(url, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ values: [[nuevoStock]] })
+      });
+      ok = r.ok;
+    } catch(e) { ok = false; }
+  }
+
+  if (ok) {
+    ins.stockActual = nuevoStock;
+
+    // Guardar en Google Sheets Log Retiros
+    const fechaHoyS = new Date().toLocaleDateString('es-AR');
+    const logRowSal = [fechaHoyS, ins.nombre, cant, ins.stockActual, nuevoStock, responsableSalida, motivo];
+    await appendRow('📤 Log Retiros', logRowSal);
+
+    // También guardar local como cache
+    const historial = JSON.parse(localStorage.getItem('lc_salidas') || '[]');
+    historial.unshift({
+      fecha: fechaHoyS,
+      insumo: ins.nombre,
+      cantidad: cant,
+      stockNuevo: nuevoStock,
+      motivo,
+      responsable: responsableSalida
+    });
+    localStorage.setItem('lc_salidas', JSON.stringify(historial.slice(0, 50)));
+
+    showToast('✅ Retiro registrado — Stock: ' + nuevoStock.toFixed(2) + ' bultos');
+    renderSalidaHistorial();
+
+    // Limpiar form
+    document.getElementById('salidaInsumo').value = '';
+    document.getElementById('salidaCantidad').value = '';
+    document.getElementById('salidaMotivo').value = '';
+    document.getElementById('salidaResponsable').value = '';
+    document.getElementById('salidaInfo').style.display = 'none';
+    document.getElementById('salidaPreview').style.display = 'none';
+  } else {
+    showToast('❌ Error al actualizar. Verificá la conexión');
+  }
+
+  document.getElementById('btnConfirmarSalida').disabled = false;
+  document.getElementById('btnConfirmarSalida').style.opacity = '1';
+}
+
+function renderSalidaHistorial() {
+  const historial = JSON.parse(localStorage.getItem('lc_salidas') || '[]');
+  const el = document.getElementById('salidaHistorial');
+  if (historial.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="e-icon">📤</div><h3>Sin retiros registrados</h3><p>Los retiros a producción aparecerán acá</p></div>';
+    return;
+  }
+  el.innerHTML = '<div class="list-section" style="padding-bottom:8px"><div class="list-card">' +
+    historial.slice(0,10).map(function(s) { return '<div class="list-row"><div class="list-row-left"><div class="list-icon rojo-bg">📤</div><div><div class="list-name" style="font-size:13px">' + s.insumo + '</div><div class="list-sub">' + s.fecha + ' · ' + s.motivo + (s.responsable && s.responsable !== '—' ? ' · ' + s.responsable : '') + '</div></div></div><div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--rojo)">-' + s.cantidad + ' bultos</div><div style="font-size:10px;color:var(--gris)">Stock: ' + s.stockNuevo.toFixed(2) + '</div></div></div>'; }).join('') +
+    '</div></div>';
+}
+
+// Patch goTo para cargar datos de salidas
+const _origGoTo2 = goTo;
+goTo = function(screen) {
+  _origGoTo2(screen);
+  if (screen === 'salidas') {
+    loadInsumosListSalidas();
+    renderSalidaHistorial();
+  }
+};
+
+
+// ── DUOLATTE CTA. CTE. ───────────────────────────────────────
+let duolatteSaldoActual = 0;
+let duolatteTotalDebeActual = 0;
+let duolatteTotalHaberActual = 0;
+
+function switchDuolatteTab(tab) {
+  document.getElementById('tabFactura').classList.toggle('active', tab === 'factura');
+  document.getElementById('tabPago').classList.toggle('active', tab === 'pago');
+  document.getElementById('formFactura').style.display = tab === 'factura' ? 'block' : 'none';
+  document.getElementById('formPago').style.display    = tab === 'pago'    ? 'block' : 'none';
+}
+
+async function loadDuolatte() {
+  // Leer saldo, total debe y total haber
+  const reads = await Promise.all([
+    readRange("💳 Cta. Cte. DUOLATTE!D4"),
+    readRange("💳 Cta. Cte. DUOLATTE!F4"),
+    readRange("💳 Cta. Cte. DUOLATTE!G4"),
+  ]);
+  const saldo = parseFloat(String(reads[0]?.[0]?.[0] || '0').replace(',','.')) || 0;
+  const debe  = parseFloat(String(reads[1]?.[0]?.[0] || '0').replace(',','.')) || 0;
+  const haber = parseFloat(String(reads[2]?.[0]?.[0] || '0').replace(',','.')) || 0;
+
+  duolatteSaldoActual       = saldo;
+  duolatteTotalDebeActual   = debe;
+  duolatteTotalHaberActual  = haber;
+
+  document.getElementById('duolatteSaldo').textContent      = fmt(saldo);
+  document.getElementById('duolatteTotalDebe').textContent  = fmt(debe);
+  document.getElementById('duolatteTotalHaber').textContent = fmt(haber);
+
+  const box = document.getElementById('duolatteSaldo').parentElement;
+  box.style.background = saldo > 0 ? 'var(--rojo-l)' : 'var(--verde-l)';
+  document.getElementById('duolatteSaldo').style.color = saldo > 0 ? 'var(--rojo)' : 'var(--verde)';
+
+  // Últimos movimientos
+  const rows = await readRange("💳 Cta. Cte. DUOLATTE!B6:J30");
+  const el = document.getElementById('duolatteMovs');
+  if (!rows || rows.length === 0) {
+    el.innerHTML = '<div class="empty-state"><div class="e-icon">📭</div><h3>Sin movimientos</h3></div>';
+    return;
+  }
+  const movs = rows.filter(r => r[0] || r[2]).slice(-12).reverse();
+  el.innerHTML = '<div class="list-section"><div class="list-card">' +
+    movs.map(r => {
+      const fecha    = r[0] || '';
+      const nroDoc   = r[1] || '';
+      const concepto = r[2] || '—';
+      const tipo     = r[3] || '';
+      const debe_v   = parseFloat(r[4]) || 0;
+      const haber_v  = parseFloat(r[5]) || 0;
+      const esHaber  = haber_v > 0;
+      return '<div class="list-row"><div class="list-row-left">' +
+        '<div class="list-icon ' + (esHaber ? 'verde' : 'rojo') + '-bg">' + (esHaber ? '📥' : '📤') + '</div>' +
+        '<div><div class="list-name" style="font-size:13px">' + concepto + (nroDoc ? ' · ' + nroDoc : '') + '</div>' +
+        '<div class="list-sub">' + fecha + (tipo ? ' · ' + tipo : '') + '</div></div></div>' +
+        '<div class="list-value ' + (esHaber ? 'verde' : 'rojo') + '" style="font-size:14px">' +
+        (esHaber ? '+' + fmt(haber_v) : '-' + fmt(debe_v)) + '</div></div>';
+    }).join('') + '</div></div>';
+}
+
+// ── Factura (DEBE) ──
+function calcFactura() {
+  const imp = parseFloat(document.getElementById('facturaImporte').value) || 0;
+  if (imp <= 0) { document.getElementById('facturaPreview').style.display='none'; return; }
+  const bruto = imp * 1.21;
+  const nuevoSaldo = duolatteSaldoActual + imp;
+  document.getElementById('factPreviewNeto').textContent  = fmt(imp);
+  document.getElementById('factPreviewBruto').textContent = fmt(bruto);
+  document.getElementById('factPreviewSaldo').textContent = fmt(nuevoSaldo);
+  document.getElementById('facturaPreview').style.display = 'block';
+}
+
+async function confirmarFactura() {
+  const fecha    = document.getElementById('facturaFecha').value;
+  const num      = document.getElementById('facturaNum').value || '';
+  const concepto = document.getElementById('facturaConcepto').value || 'Factura DUOLATTE';
+  const importe  = parseFloat(document.getElementById('facturaImporte').value) || 0;
+  if (importe <= 0) { showToast('⚠️ Ingresá el importe'); return; }
+
+  showToast('⏳ Registrando factura...');
+  const row = ['', fecha, num, concepto, 'Factura', importe, '', '', '', ''];
+  const ok = await appendRow('💳 Cta. Cte. DUOLATTE', row);
+  if (ok) {
+    duolatteSaldoActual += importe;
+    showToast('✅ Factura ' + num + ' registrada — Debe: ' + fmt(importe));
+    document.getElementById('facturaImporte').value = '';
+    document.getElementById('facturaConcepto').value = '';
+    document.getElementById('facturaNum').value = '';
+    document.getElementById('facturaPreview').style.display = 'none';
+    await loadDuolatte();
+  } else { showToast('❌ Error al registrar'); }
+}
+
+// ── Pago (HABER) ──
+function calcPago() {
+  const imp = parseFloat(document.getElementById('pagoImporte').value) || 0;
+  if (imp <= 0) { document.getElementById('pagoPreview').style.display='none'; return; }
+  const nuevo = duolatteSaldoActual - imp;
+  const el = document.getElementById('pagoPreviewSaldo');
+  el.textContent = fmt(nuevo);
+  el.style.color = nuevo <= 0 ? '#4ADE80' : '#FF9999';
+  document.getElementById('pagoPreview').style.display = 'block';
+}
+
+async function confirmarPago() {
+  const fecha    = document.getElementById('pagoFecha').value;
+  const comp     = document.getElementById('pagoComp').value || '';
+  const concepto = document.getElementById('pagoConcepto').value || 'Pago DUOLATTE';
+  const fpago    = document.getElementById('pagoFPago').value;
+  const importe  = parseFloat(document.getElementById('pagoImporte').value) || 0;
+  if (importe <= 0) { showToast('⚠️ Ingresá el importe'); return; }
+
+  showToast('⏳ Registrando pago...');
+  const row = ['', fecha, comp, concepto, 'Pago ' + fpago, '', importe, '', fpago, ''];
+  const ok = await appendRow('💳 Cta. Cte. DUOLATTE', row);
+  if (ok) {
+    duolatteSaldoActual -= importe;
+    showToast('✅ Pago de ' + fmt(importe) + ' registrado');
+    document.getElementById('pagoImporte').value = '';
+    document.getElementById('pagoConcepto').value = '';
+    document.getElementById('pagoComp').value = '';
+    document.getElementById('pagoPreview').style.display = 'none';
+    await loadDuolatte();
+  } else { showToast('❌ Error al registrar'); }
+}
+
+// Patch goTo para cargar duolatte
+const _origGoTo3 = goTo;
+goTo = function(screen) {
+  _origGoTo3(screen);
+  if (screen === 'duolatte') {
+    const hoy = new Date().toISOString().split('T')[0];
+    document.getElementById('duolatteFecha').value = hoy;
+    loadDuolatte();
+  }
+};
+
+// ── CONFIGURACIÓN ────────────────────────────────────────────
+function guardarConfig() {
+  STATE.apiKey  = document.getElementById('apiKey').value.trim();
+  STATE.sheetId = document.getElementById('sheetId').value.trim();
+  localStorage.setItem('lc_apikey',  STATE.apiKey);
+  localStorage.setItem('lc_sheetId', STATE.sheetId);
+  showToast('✅ Configuración guardada');
+  syncData();
+}
+
+function guardarPrecioFQ() {
+  const p = parseFloat(document.getElementById('precioFQ').value);
+  if (isNaN(p)) { showToast('⚠️ Ingresá un precio válido'); return; }
+  STATE.precioFQ = p;
+  localStorage.setItem('lc_precioFQ', p);
+  showToast(`✅ Precio FQ: ${fmt(p)}/kg`);
+}
+</script>
+</body>
+</html>
