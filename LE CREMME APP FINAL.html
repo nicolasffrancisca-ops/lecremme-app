@@ -5144,39 +5144,10 @@ async function _mpCalcularMinimosDinamicos(stockMPRows) {
     const saboresExcluidos = [];
     const factor = 1 + (MP_COLCHON_PCT / 100);
 
-    // PASADA 1: por cada sabor que hoy está por debajo de su umbral (mínimo + colchón), sumar su
-    // demanda — insumos crudos van directo al acumulador final, las Bases quedan en un acumulador
-    // intermedio para recién redondear a lotes enteros DESPUÉS de juntar todos los sabores.
-    heladosRows.forEach(r => {
-      const cod  = r[0]?.toString().trim();
-      const nom  = r[1]?.toString().trim();
-      const tipo = r[2]?.toString().trim();
-      const minManual   = parseAR(r[5]); // F = STOCK MÍN (manual, tal cual lo carga Nico)
-      if (!cod || !nom || !tipo || minManual <= 0) return;
-
-      const clase = _mpTipoClase(tipo);
-      if (!clase) { saboresExcluidos.push({ nom, tipo, motivo: 'tipo sin conversión definida (ej. torta)' }); return; }
-
-      const receta = saboresPorCodigo[cod];
-      if (!receta || !receta.kgRinde) { saboresExcluidos.push({ nom, tipo, motivo: 'sin receta encontrada' }); return; }
-
-      // Stock actual en la MISMA unidad nativa que el mínimo: tachos/unidades (col D) para
-      // granel/paleta, kg reales (col E) para petit — igual que ya usa loadHelados().
-      const stkActual = clase === 'petit' ? parseAR(r[4]) : parseAR(r[3]);
-      const umbral = minManual * factor; // colchón (solo acá, nunca sobre el Manual)
-
-      if (stkActual >= umbral) return; // sobrado incluso con el margen de seguridad → no suma demanda
-
-      let objetivoKg;
-      if (clase === 'granel') {
-        const kgSinLote = umbral * MP_KG_POR_TACHO;
-        objetivoKg = Math.ceil(kgSinLote / MP_LOTE_SABOR_GRANEL_KG) * MP_LOTE_SABOR_GRANEL_KG; // lote fijo de 14kg de la máquina de sabor
-      } else if (clase === 'paleta') {
-        objetivoKg = umbral * receta.kgRinde; // unidades × peso real de la receta, sin lote fijo (confirmado por Nico)
-      } else /* petit */ {
-        objetivoKg = umbral; // ya está en kg, directo, sin lote fijo
-      }
-
+    // Suma la demanda de un sabor (ya convertida a "objetivoKg" en su unidad de receta) a los
+    // acumuladores — compartido entre el camino de granel (abajo) y el de paleta/petit (más abajo),
+    // para no duplicar la lógica de expansión de receta → Base/insumo.
+    function _mpAcumularDemandaSabor(objetivoKg, receta) {
       const factorReceta = objetivoKg / receta.kgRinde;
       (receta.ingredientes || []).forEach(ing => {
         const nombreIng = String(ing.desc || '').trim();
@@ -5191,6 +5162,53 @@ async function _mpCalcularMinimosDinamicos(stockMPRows) {
           demandaInsumos[nombreIng] = (demandaInsumos[nombreIng] || 0) + cantNecesaria;
         }
       });
+    }
+
+    // PASADA 1a — GRANEL (v4.58, pedido de Nico): antes este módulo recalculaba su propio
+    // "cuánto necesito de cada sabor" con mínimo × colchón%, totalmente desconectado de lo que
+    // Plan de hoy realmente manda a fabricar (que desde v4.56 usa un criterio distinto: piso =
+    // el mayor entre mínimo, proyección histórica de pedidos + colchón, y pedido real pendiente).
+    // Eso podía sobrar o faltar materia prima según cuál de los dos criterios diera más. Ahora
+    // GRANEL reutiliza DIRECTAMENTE _sugNecesidadPorSabor() — el mismo motor de Plan de hoy — así
+    // la reposición de MP siempre pide justo lo que hace falta para lo que se va a fabricar.
+    // Paletas y Petit (que Plan de hoy no toca, ver v4.47) siguen con su criterio propio de
+    // mínimo × colchón%, sin cambios — no hay con qué alinearlos.
+    const necesidadGranel = await _sugNecesidadPorSabor();
+    necesidadGranel.forEach(s => {
+      if (s.sinReceta) { saboresExcluidos.push({ nom: s.nom, tipo: s.tipo, motivo: 'sin receta encontrada' }); return; }
+      _mpAcumularDemandaSabor(s.kg, s.receta);
+    });
+
+    // PASADA 1b — PALETA / PETIT: criterio propio sin cambios (mínimo × colchón%).
+    heladosRows.forEach(r => {
+      const cod  = r[0]?.toString().trim();
+      const nom  = r[1]?.toString().trim();
+      const tipo = r[2]?.toString().trim();
+      const minManual   = parseAR(r[5]); // F = STOCK MÍN (manual, tal cual lo carga Nico)
+      if (!cod || !nom || !tipo || minManual <= 0) return;
+
+      const clase = _mpTipoClase(tipo);
+      if (clase === 'granel') return; // ya se calculó arriba, vía Plan de hoy — no se recalcula acá
+      if (!clase) { saboresExcluidos.push({ nom, tipo, motivo: 'tipo sin conversión definida (ej. torta)' }); return; }
+
+      const receta = saboresPorCodigo[cod];
+      if (!receta || !receta.kgRinde) { saboresExcluidos.push({ nom, tipo, motivo: 'sin receta encontrada' }); return; }
+
+      // Stock actual en la MISMA unidad nativa que el mínimo: tachos/unidades (col D) para
+      // paleta, kg reales (col E) para petit — igual que ya usa loadHelados().
+      const stkActual = clase === 'petit' ? parseAR(r[4]) : parseAR(r[3]);
+      const umbral = minManual * factor; // colchón (solo acá, nunca sobre el Manual)
+
+      if (stkActual >= umbral) return; // sobrado incluso con el margen de seguridad → no suma demanda
+
+      let objetivoKg;
+      if (clase === 'paleta') {
+        objetivoKg = umbral * receta.kgRinde; // unidades × peso real de la receta, sin lote fijo (confirmado por Nico)
+      } else /* petit */ {
+        objetivoKg = umbral; // ya está en kg, directo, sin lote fijo
+      }
+
+      _mpAcumularDemandaSabor(objetivoKg, receta);
     });
 
     // PASADA 2: recién ahora que está toda la demanda de sabores junta por Base, se redondea
@@ -5631,7 +5649,7 @@ function renderAlertasContent() {
 }
 
 // ── CONFIG ──────────────────────────────────────────────────
-const APP_VERSION = 'v4.57 · 12/09/2026 (FIX URGENTE — RRHH → Calendario laboral podía borrar el PIN real de TODOS los empleados de fábrica: el PIN nunca viaja en la carga inicial de la app (bootstrapPublico lo excluye a propósito) y solo se completa en memoria al entrar a Config; si se entraba directo a RRHH y se guardaba un horario, calGuardarHorario→_empleadosSync reescribía empleados_json completo con el PIN en blanco de todos. Dos fixes: 1. Entrar a RRHH ahora también dispara la carga de PIN reales (mismo mecanismo que ya tenía Config). 2. _empleadosSync() ahora lee el empleados_json real de la hoja antes de escribir y nunca pisa el PIN de un empleado con uno vacío en memoria — conserva el real si no hay uno cargado. Ver comentario en _empleadosSync() y en la navegación a RRHH. — v4.56 (12/09): Plan de hoy — nuevo criterio de "cuánto fabricar" por sabor, pedido de Nico: antes se sumaba STOCK MÍN + Pedido FQ pendiente, lo que sobreproducía (un sabor por encima de su mínimo igual entraba entero "a fabricar" si tenía un pedido pendiente). Ahora el piso es el MAYOR entre tres cosas, nunca la suma: STOCK MÍN manual, proyección histórica de lo que pidieron realmente las franquicias en las últimas hasta 3 rondas de pedido (con colchón 40%/30%/20% según tenga 1/2/3+ rondas de historial — más colchón cuanto más nuevo el sabor), y el Pedido FQ real pendiente si hay uno cargado. Nueva etiqueta de origen "📊 proyección" en las tarjetas del Plan de hoy, además de "📦 pedido" y "🔒 mínimo". Ver _sugNecesidadPorSabor / _sugProyeccionHistoricaPorSabor y spec-produccion-sugerida.md. — v4.55 (11/09): FIX URGENTE — "Últimas bajas" (Baja Mercadería) mostraba siempre las mismas bajas viejas de julio y nunca las del día: el historial asumía que la hoja "Log Bajas" queda ordenada de la más nueva a la más vieja ("appendRowAt siempre inserta en la fila 2" — ese supuesto era falso, appendRowAt en realidad agrega al FINAL de la hoja). Se invierte el orden antes de armar la lista, así las bajas de hoy aparecen primero. — v4.54 (10/09): 1. FIX "Historial Sugerido" no guardaba el plan del día (Code.gs comparaba fechas mal). 2. UI badge 🟢/🔴 "Alcanza la MP" en la misma línea de "Cocinar hoy". 3. Mensajes Emergentes con selector de destinatario para admin (Fábrica / una franquicia puntual / Todos). Ver spec-mensajes-emergentes.md y spec-produccion-sugerida.md)';
+const APP_VERSION = 'v4.58 · 12/09/2026 (Reposición MP — el modo Calculado para HELADO GRANEL ahora usa el MISMO motor que Plan de hoy (_sugNecesidadPorSabor), en vez de recalcular su propio umbral de mínimo × colchón% desconectado de lo que realmente se va a fabricar: antes podía pedir de más o de menos materia prima porque los dos criterios no se hablaban entre sí (caso real: pedía 31+ bultos de más de crema Ramolac). _mpCalcularMinimosDinamicos() ahora, para granel, reutiliza directamente los kg ya calculados por Plan de hoy (piso = mayor entre mínimo, proyección histórica+colchón, pedido real) y los expande a Bases/insumos igual que antes. Paletas y Petit siguen con su criterio propio de mínimo × colchón%, sin cambios — Plan de hoy no los produce, no hay con qué alinearlos. — v4.57 (12/09): FIX URGENTE — RRHH → Calendario laboral podía borrar el PIN real de TODOS los empleados de fábrica: el PIN nunca viaja en la carga inicial de la app (bootstrapPublico lo excluye a propósito) y solo se completa en memoria al entrar a Config; si se entraba directo a RRHH y se guardaba un horario, calGuardarHorario→_empleadosSync reescribía empleados_json completo con el PIN en blanco de todos. Dos fixes: 1. Entrar a RRHH ahora también dispara la carga de PIN reales (mismo mecanismo que ya tenía Config). 2. _empleadosSync() ahora lee el empleados_json real de la hoja antes de escribir y nunca pisa el PIN de un empleado con uno vacío en memoria — conserva el real si no hay uno cargado. Ver comentario en _empleadosSync() y en la navegación a RRHH. — v4.56 (12/09): Plan de hoy — nuevo criterio de "cuánto fabricar" por sabor, pedido de Nico: antes se sumaba STOCK MÍN + Pedido FQ pendiente, lo que sobreproducía (un sabor por encima de su mínimo igual entraba entero "a fabricar" si tenía un pedido pendiente). Ahora el piso es el MAYOR entre tres cosas, nunca la suma: STOCK MÍN manual, proyección histórica de lo que pidieron realmente las franquicias en las últimas hasta 3 rondas de pedido (con colchón 40%/30%/20% según tenga 1/2/3+ rondas de historial — más colchón cuanto más nuevo el sabor), y el Pedido FQ real pendiente si hay uno cargado. Nueva etiqueta de origen "📊 proyección" en las tarjetas del Plan de hoy, además de "📦 pedido" y "🔒 mínimo". Ver _sugNecesidadPorSabor / _sugProyeccionHistoricaPorSabor y spec-produccion-sugerida.md. — v4.55 (11/09): FIX URGENTE — "Últimas bajas" (Baja Mercadería) mostraba siempre las mismas bajas viejas de julio y nunca las del día: el historial asumía que la hoja "Log Bajas" queda ordenada de la más nueva a la más vieja ("appendRowAt siempre inserta en la fila 2" — ese supuesto era falso, appendRowAt en realidad agrega al FINAL de la hoja). Se invierte el orden antes de armar la lista, así las bajas de hoy aparecen primero. — v4.54 (10/09): 1. FIX "Historial Sugerido" no guardaba el plan del día (Code.gs comparaba fechas mal). 2. UI badge 🟢/🔴 "Alcanza la MP" en la misma línea de "Cocinar hoy". 3. Mensajes Emergentes con selector de destinatario para admin (Fábrica / una franquicia puntual / Todos). Ver spec-mensajes-emergentes.md y spec-produccion-sugerida.md)';
 const CFG = {
   precioFQ: 0,
 
