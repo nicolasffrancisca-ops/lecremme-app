@@ -238,6 +238,36 @@ input[type=number]{-moz-appearance:textfield}
 /* v4.98: botón "🧾 Factura A" en gastos de Rentabilidad */
 .gfa-btn{border:1px solid var(--gris-l);background:transparent;color:var(--gris);border-radius:8px;padding:4px 10px;font-family:inherit;font-size:clamp(11px,calc(0.417vw + 9.0px),15px);font-weight:600;cursor:pointer;white-space:nowrap}
 .gfa-btn.on{background:var(--oscuro);border-color:var(--oscuro);color:#fff}
+/* v5.00: Ingreso de Mercadería por comprobante */
+.cf-sub{font-size:clamp(10px,calc(0.417vw + 8.0px),14px);font-weight:700;color:var(--gris);text-transform:uppercase;letter-spacing:.5px;margin:2px 0 8px}
+.cf-nota{margin-top:6px;font-size:clamp(11px,calc(0.417vw + 9.0px),15px);color:var(--gris)}
+.cf-nota.ok{color:var(--verde);font-weight:600}.cf-nota.mal{color:var(--rojo);font-weight:600}
+.cf-rform{background:var(--crema);border:1px dashed var(--gris);border-radius:var(--rs);padding:12px;margin-bottom:16px}
+.cf-rform.editando{border:2px solid var(--oscuro)}
+.cf-check{display:flex;align-items:center;gap:6px;font-size:clamp(12px,calc(0.417vw + 10.0px),16px);color:var(--oscuro);cursor:pointer;margin-left:4px}
+.cf-rprev{background:var(--surface);border-radius:8px;padding:9px 11px;margin-bottom:10px;font-size:clamp(12px,calc(0.417vw + 10.0px),16px);display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center}
+.cf-lista{background:var(--surface);border-radius:var(--rs);border:1px solid var(--gris-l);margin-bottom:12px;overflow:hidden}
+.cf-ren{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-bottom:1px solid var(--gris-l)}
+.cf-ren:last-child{border-bottom:none}
+.cf-ren .cf-rn{flex:1;min-width:0}
+.cf-ren .cf-rt{font-weight:600;font-size:clamp(12px,calc(0.417vw + 10.0px),16px);word-break:break-word}
+.cf-rs{font-size:clamp(10px,calc(0.417vw + 8.0px),14px);color:var(--gris);margin-top:2px}
+.cf-ren .cf-ra{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.cf-ren .cf-rm{font-weight:700;white-space:nowrap;font-size:clamp(12px,calc(0.417vw + 10.0px),16px)}
+.cf-ren.anulado{opacity:.5}.cf-ren.anulado .cf-rt{text-decoration:line-through}
+.cf-ib{background:none;border:none;cursor:pointer;font-size:clamp(14px,calc(0.312vw + 12.5px),17px);padding:2px 4px;color:var(--gris)}
+.cf-var{display:inline-block;padding:2px 7px;border-radius:6px;font-weight:700;font-size:clamp(10px,calc(0.417vw + 8.0px),14px);white-space:nowrap}
+.cf-var.v{background:var(--verde-l);color:var(--verde)}.cf-var.a{background:#FFF3CD;color:#7A5C00}.cf-var.r{background:var(--rojo-l);color:var(--rojo)}
+.cf-pie{background:var(--surface);border-radius:var(--rs);border:1px solid var(--gris-l);padding:6px 12px}
+.cf-prow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--gris-l);font-size:clamp(12px,calc(0.417vw + 10.0px),16px)}
+.cf-prow:last-child{border-bottom:none}
+.cf-prow .fi{width:150px;max-width:46%;text-align:right;padding:8px 10px;margin:0}
+.cf-prow.tot{font-weight:700}
+.cf-ctrl{border-radius:8px;padding:10px 12px;font-weight:700;margin:8px 0 4px;font-size:clamp(12px,calc(0.417vw + 10.0px),16px)}
+.cf-ctrl.ok{background:var(--verde-l);color:var(--verde)}.cf-ctrl.mal{background:var(--rojo-l);color:var(--rojo)}.cf-ctrl.na{background:var(--gris-l);color:var(--gris)}
+.cf-hdet{padding:4px 12px 10px;background:var(--crema)}
+.cf-chip{display:inline-block;font-size:clamp(9px,calc(0.312vw + 7.5px),12px);font-weight:700;padding:1px 6px;border-radius:5px;background:var(--gris-l);color:var(--oscuro);margin-left:4px}
+.cf-chip.rojo{background:var(--rojo-l);color:var(--rojo)}
 #canjeWall{position:fixed;inset:0;z-index:3000;background:var(--rosa);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
 #canjeWall.show{display:flex}
 #canjeWall .vch-box{background:var(--surface);border-radius:18px;padding:28px 22px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.2)}
@@ -1087,59 +1117,67 @@ input[type=number]{-moz-appearance:textfield}
     <div class="fg"><label class="fl">Filtrar por proveedor</label><select class="fs" id="buscPrecioProv" onchange="filtrarBuscPrecio()"><option value="">Todos los proveedores</option></select></div>
     <div id="buscPrecioResultados"></div>
   </div>
-  <div class="form-sec">
-    <div class="undo-bar" id="undo-bar-compras">
-      <span class="undo-counter" id="undo-counter-compras">—</span>
-      <button class="undo-btn" onclick="undoForm('compras')">↩ Deshacer</button>
+  <!-- v5.00 (28/10/2026): Ingreso de Mercadería por COMPROBANTE — factura o nota de crédito
+       completa (todos los renglones), control contra el total del papel y un solo Confirmar. -->
+  <div class="form-sec" id="cfForm">
+    <div style="display:flex;gap:6px;background:var(--gris-l);border-radius:10px;padding:4px;margin-bottom:14px">
+      <button type="button" class="vch-tab act" id="cfTipoFC" onclick="cfSetTipo('FACTURA')">🧾 Factura</button>
+      <button type="button" class="vch-tab" id="cfTipoNC" onclick="cfSetTipo('NC')">↩ Nota de crédito</button>
     </div>
-    <div class="fg"><label class="fl">Insumo / Materia Prima</label><select class="fs" id="compInsumo" onchange="onCompInsumo()"><option value="">— Seleccioná —</option></select></div>
-    <div id="compInfo" style="display:none;background:var(--verde-l);border-radius:var(--rs);padding:13px;margin-bottom:14px">
-      <div style="font-size:clamp(10px,calc(0.417vw + 8.0px),14px);font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Estado actual</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-        <div><div style="font-size:clamp(9px,calc(0.312vw + 7.5px),12px);color:var(--gris)">Stock actual</div><div style="font-size:clamp(14px,calc(0.312vw + 12.5px),17px);font-weight:700;color:var(--verde)" id="compStockAct">—</div><div style="font-size:clamp(9px,calc(0.312vw + 7.5px),12px);color:var(--gris)">bultos</div></div>
-        <div><div style="font-size:clamp(9px,calc(0.312vw + 7.5px),12px);color:var(--gris)">Último precio neto</div><div style="font-size:clamp(14px,calc(0.312vw + 12.5px),17px);font-weight:700;color:var(--verde)" id="compPrecioAct">—</div></div>
-        <div><div style="font-size:clamp(9px,calc(0.312vw + 7.5px),12px);color:var(--gris)">Último precio bruto</div><div style="font-size:clamp(14px,calc(0.312vw + 12.5px),17px);font-weight:700;color:var(--verde)" id="compPrecioBruto">—</div></div>
-      </div>
-      <div id="compUltFecha" style="margin-top:8px;font-size:clamp(10px,calc(0.417vw + 8.0px),14px);color:var(--gris)">📅 Última compra: <span id="compUltFechaVal">cargando...</span></div>
-    </div>
-    <div class="fg"><label class="fl">Empleado que recibe y controla</label><input class="fi" id="compResp" placeholder="Nombre del empleado" autocorrect="off"></div>
-    <div id="compPesoVarNota" style="display:none;background:var(--oro-l,#FFF3CD);border-radius:var(--rs);padding:10px 13px;margin-bottom:10px;font-size:clamp(11px,calc(0.417vw + 9.0px),15px);color:var(--oscuro)">⚖️ Este insumo se compra por peso variable — cargá los <b>kg reales</b> que llegaron y el <b>precio total NETO (sin IVA)</b> (no por bulto), el tamaño de bulto puede cambiar de una compra a otra.</div>
+    <div class="cf-sub">Encabezado</div>
     <div class="f2">
-      <div class="fg"><label class="fl" id="compCantLbl">Cantidad (bultos)</label><input class="fi" type="number" id="compCant" placeholder="0" autocorrect="off" oninput="calcComp()"></div>
-      <div class="fg"><label class="fl" id="compPrecioLbl">Precio por bulto — NETO (sin IVA)</label><input class="fi" type="number" id="compPrecio" placeholder="0" autocorrect="off" oninput="calcComp()"></div>
-    </div>
-    <div id="compPrev" style="display:none;background:var(--oscuro);border-radius:var(--rs);padding:14px;margin-bottom:14px">
-      <div style="font-size:clamp(10px,calc(0.417vw + 8.0px),14px);color:rgba(255,255,255,.5);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Resultado</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div><div style="font-size:clamp(9px,calc(0.312vw + 7.5px),12px);color:rgba(255,255,255,.4)">Nuevo stock</div><div style="font-size:clamp(18px,calc(0.417vw + 16.0px),22px);font-weight:700;color:#4ADE80" id="compNuevoStock">—</div></div>
-        <div><div style="font-size:clamp(9px,calc(0.312vw + 7.5px),12px);color:rgba(255,255,255,.4)">Total neto</div><div style="font-size:clamp(18px,calc(0.417vw + 16.0px),22px);font-weight:700;color:white" id="compTotal">—</div></div>
-      </div>
-      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1)">
-        <div style="font-size:clamp(9px,calc(0.312vw + 7.5px),12px);color:rgba(255,255,255,.4);margin-bottom:3px">Último proveedor</div>
-        <div style="font-size:clamp(13px,calc(0.521vw + 10.5px),18px);font-weight:600;color:rgba(255,255,255,.75)" id="compUltProv">—</div>
-      </div>
-      <div id="compVarPrecio" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1)">
-        <div style="font-size:clamp(9px,calc(0.312vw + 7.5px),12px);color:rgba(255,255,255,.4);margin-bottom:4px">Variación vs último precio pagado</div>
-        <div style="font-size:clamp(15px,calc(0.312vw + 13.5px),18px);font-weight:700" id="compVarVal">—</div>
-      </div>
+      <div class="fg"><label class="fl">Proveedor</label><input class="fi" id="cfProv" list="compProvList" placeholder="Nombre" autocorrect="off" oninput="cfOnProv()" onchange="cfOnProv()"><datalist id="compProvList"></datalist></div>
+      <div class="fg"><label class="fl" id="cfNumLbl">N° de factura</label><input class="fi" id="cfNum" placeholder="0003-00012345" autocorrect="off" autocapitalize="off" oninput="cfLeerEncabezado()"></div>
     </div>
     <div class="f2">
-      <div class="fg"><label class="fl">N° Factura (opcional)</label><input class="fi" id="compFact" placeholder="FAC-0001" autocorrect="off" autocapitalize="off"></div>
-      <div class="fg"><label class="fl">Proveedor</label><input class="fi" id="compProv" list="compProvList" placeholder="Nombre" autocorrect="off"><datalist id="compProvList"></datalist></div>
+      <div class="fg"><label class="fl">Fecha</label><input class="fi" type="date" id="cfFecha" onchange="cfLeerEncabezado()"></div>
+      <div class="fg"><label class="fl">Recibe y controla</label><input class="fi" id="cfResp" placeholder="Nombre del empleado" autocorrect="off" oninput="cfLeerEncabezado()"></div>
     </div>
-    <!-- v4.98: IVA crédito — cada compra se marca con o sin Factura A -->
     <div class="fg">
-      <label class="fl">¿Viene con Factura A?</label>
+      <label class="fl">¿Es Factura A?</label>
       <div style="display:flex;gap:6px;background:var(--gris-l);border-radius:10px;padding:4px">
-        <button type="button" class="vch-tab" id="compFaSi" onclick="compSetFacturaA(true)">🧾 Con factura A</button>
-        <button type="button" class="vch-tab" id="compFaNo" onclick="compSetFacturaA(false)">Sin factura A</button>
-      </div>
-      <div id="compIvaBox" class="f2" style="display:none;margin-top:8px">
-        <div class="fg" style="margin-bottom:0"><label class="fl">Alícuota IVA</label><select class="fs" id="compIvaAlic" onchange="compIvaRecalc(true)"><option value="21">21%</option><option value="10.5">10,5%</option><option value="27">27%</option></select></div>
-        <div class="fg" style="margin-bottom:0"><label class="fl">IVA de esta compra ($)</label><input class="fi" type="number" id="compIva" placeholder="0" autocorrect="off" oninput="COMP_IVA_MANUAL=true"></div>
+        <button type="button" class="vch-tab" id="cfFaSi" onclick="cfSetFA(true)">🧾 Factura A</button>
+        <button type="button" class="vch-tab" id="cfFaNo" onclick="cfSetFA(false)">Sin factura A</button>
       </div>
     </div>
-    <button class="btn verde" id="btnComp" onclick="confirmaComp()" disabled style="opacity:.5">✓ Confirmar compra</button>
+    <div class="fg">
+      <label class="fl">Condición de pago</label>
+      <div style="display:flex;gap:6px;background:var(--gris-l);border-radius:10px;padding:4px">
+        <button type="button" class="vch-tab" id="cfCondCont" onclick="cfSetCond('CONTADO')">💵 Contado</button>
+        <button type="button" class="vch-tab" id="cfCondCta" onclick="cfSetCond('CTA CTE')">📒 Cuenta corriente</button>
+      </div>
+      <div id="cfCondNota" class="cf-nota" style="display:none"></div>
+    </div>
+
+    <div class="cf-sub" style="margin-top:4px">Renglones</div>
+    <div id="cfLista"></div>
+    <div class="cf-rform" id="cfRForm">
+      <div class="fg"><label class="fl">Insumo / Materia Prima</label><select class="fs" id="compInsumo" onchange="cfOnInsumo()"><option value="">— Seleccioná —</option></select></div>
+      <div id="compPesoVarNota" style="display:none;background:var(--oro-l,#FFF3CD);border-radius:var(--rs);padding:10px 13px;margin-bottom:10px;font-size:clamp(11px,calc(0.417vw + 9.0px),15px);color:var(--oscuro)">⚖️ Este insumo se compra por peso variable — cargá los <b>kg reales</b> que llegaron y el <b>precio total NETO (sin IVA)</b> del renglón (no por bulto).</div>
+      <div class="f2">
+        <div class="fg"><label class="fl" id="compCantLbl">Cantidad (bultos)</label><input class="fi" type="number" inputmode="decimal" id="compCant" placeholder="0" autocorrect="off" oninput="cfCalcRenglon()"></div>
+        <div class="fg"><label class="fl" id="compPrecioLbl">Precio por bulto — NETO</label><input class="fi" type="number" inputmode="decimal" id="compPrecio" placeholder="0" autocorrect="off" oninput="cfCalcRenglon()"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">IVA del renglón</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <button type="button" class="gfa-btn on" id="cfAlic21" onclick="cfSetAlic(21)">21%</button>
+          <button type="button" class="gfa-btn" id="cfAlic105" onclick="cfSetAlic(10.5)">10,5%</button>
+          <button type="button" class="gfa-btn" id="cfAlic27" onclick="cfSetAlic(27)">27%</button>
+          <label id="cfSinDevBox" class="cf-check" style="display:none"><input type="checkbox" id="cfSinDev" onchange="cfCalcRenglon()"> Sin devolución (no toca stock)</label>
+        </div>
+      </div>
+      <div id="cfRPrev" class="cf-rprev" style="display:none"></div>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn" id="cfBtnRenglon" onclick="cfAgregarRenglon()" style="padding:12px">＋ Agregar renglón</button>
+        <button type="button" class="btn-out" id="cfBtnCancelEdit" onclick="cfCancelarEdicion()" style="display:none;margin-top:0;width:auto;padding:12px 16px">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="cf-sub">Totales</div>
+    <div class="cf-pie" id="cfPie"></div>
+    <button class="btn verde" id="btnComp" onclick="cfConfirmar()" disabled style="opacity:.5;margin-top:14px">✓ Confirmar factura</button>
+    <button type="button" class="btn-out" id="cfBtnDescartar" onclick="cfDescartar()" style="display:none">🗑 Descartar lo cargado</button>
   </div>
   <div class="sec-title">Últimas compras</div>
   <div id="compHist"><div class="empty"><div class="ei">📦</div><p>Sin compras registradas</p></div></div>
@@ -6543,7 +6581,15 @@ function renderAlertasContent() {
 //   por sabor + 2 por insumo uno detrás del otro. Si el Code.gs no tiene la acción, se usa el camino de siempre. Si se
 //   corta la conexión, la operación entera queda pendiente en el dispositivo (lc_prodLotePend_v1) y se reintenta sola.
 //   (2) Code.gs: appendRowAt (Historial App, Log Producción, etc.) ya no lee la hoja entera para buscar la fila libre.
-const APP_VERSION = 'v4.99 · 28/10/2026 — Producción más rápida (un solo envío) y anotaciones en historiales más livianas.';
+// v5.00 (28/10/2026) — INGRESO DE MERCADERÍA POR COMPROBANTE: (1) se carga la factura o nota de crédito del proveedor
+//   completa (encabezado + renglones con IVA 21/10,5/27 + percepciones IIBB/IVA/municipal) con control contra el total
+//   del papel y un solo Confirmar ('compraComprobante' en Code.gs: todo junto, bajo lock, idempotente por ID; hoja nueva
+//   "Compras Comprobantes" y columnas M..S en Log Compras). Variación de precio por renglón (verde / amarillo hasta 10% /
+//   rojo). Proveedores con hoja de Cta. Cte. → el total va solo a su cuenta (Debe; NC y anulaciones en negativo).
+//   (2) Anulación (admin) de la factura entera o de un renglón: stock, precio y proveedor vuelven a los anteriores solo si
+//   era la última compra del insumo; arreglado el mismo error en el Deshacer de las compras viejas. (3) IVA: suman las
+//   percepciones de IVA. (4) Cta. Cte. proveedores: muestra bien los importes negativos y lee hasta la fila 4000.
+const APP_VERSION = 'v5.00 · 28/10/2026 — Ingreso de mercadería por factura completa, con control de total y cuenta corriente del proveedor.';
 const CFG = {
   precioFQ: 0,
 
@@ -8967,7 +9013,7 @@ function goTo(s) {
     loadCta(cta);
   }
   if (s === 'proveedores') loadProv();
-  if (s === 'compras')  { loadInsumosDrop('compInsumo'); cargarComprasHist(); }
+  if (s === 'compras')  { loadInsumosDrop('compInsumo').then(cfInit, cfInit); cargarComprasHist(); }
   if (s === 'retiros')  { loadInsumosDrop('retInsumo'); renderRetHist(); bajPoblarPaletaSel(); }
   if (s === 'alertas')  loadAlertasSection();
   if (s === 'cheques')  loadCheques();
@@ -10142,7 +10188,9 @@ async function loadRentabilidad() {
 //     · Compras de mercadería marcadas "con factura A" (Log Compras K='SI', L=IVA).
 //     · Gastos de Rentabilidad (fábrica y Rondeau) marcados 🧾 Factura A (E='SI', F=IVA).
 //     · Facturas A cargadas a mano acá ("IVA Facturas Manuales").
-// No incluye saldo a favor de meses anteriores, retenciones ni percepciones.
+//     · Percepciones de IVA de las facturas de proveedores (v5.00, hoja
+//       "Compras Comprobantes" col. N; las NC restan, las anuladas no cuentan).
+// No incluye saldo a favor de meses anteriores ni retenciones.
 let IVA_MES = '';
 let IVA_DATOS = null;
 let IVA_INIT_OK = false;
@@ -10203,13 +10251,14 @@ async function ivaCargar(force) {
     return;
   }
   try {
-    const [arca, compras, gFab, gRon, man, vin] = await Promise.all([
+    const [arca, compras, gFab, gRon, man, vin, comps] = await Promise.all([
       readRange('Facturación ARCA!A2:I5000'),
-      readRange('Log Compras!A5:L5000'),
+      readRange('Log Compras!A5:N5000'),
       readRange('Rentabilidad Gastos!A2:F5000'),
       readRange('Rent Rondeau Gastos!A2:F5000'),
       readRange('IVA Facturas Manuales!A2:J5000'),
       vinCargarSheet(VIN_SHEETS.ventas, !!force),
+      readRange('Compras Comprobantes!A2:Q5000'), // v5.00: percepciones de IVA de facturas de proveedores
     ]);
     const fallidas = [];
     if (arca === null) fallidas.push('Facturación ARCA');
@@ -10217,7 +10266,7 @@ async function ivaCargar(force) {
     if (gFab === null) fallidas.push('Gastos fábrica');
     if (gRon === null) fallidas.push('Gastos Rondeau');
     if (man === null) fallidas.push('Facturas manuales');
-    IVA_DATOS = _ivaCalcular(arca || [], compras || [], gFab || [], gRon || [], man || [], vin || { filas: [] });
+    IVA_DATOS = _ivaCalcular(arca || [], compras || [], gFab || [], gRon || [], man || [], vin || { filas: [] }, comps || []);
     IVA_DATOS.fallidas = fallidas;
     ivaRender();
   } catch (e) {
@@ -10226,7 +10275,7 @@ async function ivaCargar(force) {
   }
 }
 
-function _ivaCalcular(arca, compras, gFab, gRon, man, vin) {
+function _ivaCalcular(arca, compras, gFab, gRon, man, vin, comps) {
   const D = { mes: IVA_MES };
   // ── Débito fábrica: facturas A emitidas (ARCA) ──
   D.facturas = [];
@@ -10280,7 +10329,19 @@ function _ivaCalcular(arca, compras, gFab, gRon, man, vin) {
     if (String(r[0] || '').trim().toUpperCase() === 'ANULADA' || String(r[2]).toUpperCase().indexOf('ANULADA') !== -1) return;
     if (!_ivaEnMes(r[1])) return;
     const fa = String(r[10] || '').trim().toUpperCase();
-    D.compras.push({ fila: 5 + i, fecha: String(r[1] || ''), insumo: String(r[2] || ''), neto: parseAR(r[5]), prov: String(r[9] || ''), fact: String(r[8] || ''), fa: fa === 'SI' ? 'SI' : (fa === 'NO' ? 'NO' : ''), iva: parseAR(r[11]) });
+    D.compras.push({ fila: 5 + i, fecha: String(r[1] || ''), insumo: String(r[2] || ''), neto: parseAR(r[5]), prov: String(r[9] || ''), fact: String(r[8] || ''), fa: fa === 'SI' ? 'SI' : (fa === 'NO' ? 'NO' : ''), iva: parseAR(r[11]), nc: String(r[13] || '').trim().toUpperCase() === 'NC' });
+  });
+  // ── Crédito: percepciones de IVA de facturas de proveedores (v5.00) ──
+  // "Compras Comprobantes": B=FECHA C=TIPO D=PROVEEDOR E=N° N=PERC. IVA Q=ESTADO.
+  // Las NC restan; las anuladas no cuentan.
+  D.percIva = [];
+  (comps || []).forEach(r => {
+    if (!r || !r[0] || !_ivaEnMes(r[1])) return;
+    if (String(r[16] || '').trim().toUpperCase() !== 'ACTIVA') return;
+    const v = parseAR(r[13]);
+    if (!v) return;
+    const nc = String(r[2] || '').trim().toUpperCase() === 'NC';
+    D.percIva.push({ fecha: String(r[1] || ''), prov: String(r[3] || ''), nro: String(r[4] || ''), nc, iva: nc ? -Math.abs(v) : Math.abs(v) });
   });
   // ── Crédito: gastos de Rentabilidad con Factura A ──
   const _gastos = (rows) => rows.filter(r => r && String(r[0] || '').trim() === IVA_MES && r[1] && String(r[4] || '').trim().toUpperCase() === 'SI')
@@ -10304,8 +10365,9 @@ function _ivaTotales(D) {
   D.credGFab = D.gastosFab.reduce((a, g) => a + g.iva, 0);
   D.credGRon = D.gastosRon.reduce((a, g) => a + g.iva, 0);
   D.credMan = D.manuales.reduce((a, m) => a + m.iva, 0);
+  D.credPerc = (D.percIva || []).reduce((a, p) => a + p.iva, 0);
   D.debito = D.debFab + D.debRon;
-  D.credito = D.credCompras + D.credGFab + D.credGRon + D.credMan;
+  D.credito = D.credCompras + D.credGFab + D.credGRon + D.credMan + D.credPerc;
   D.saldo = D.debito - D.credito;
 }
 
@@ -10332,7 +10394,7 @@ function ivaRender() {
     + '<div class="kpi" style="grid-column:1/-1;background:linear-gradient(135deg,var(--oscuro) 0%,#1C1D21 100%);border-top:3px solid var(--rosa-l)"><div class="kpi-ico" style="opacity:.15">🧮</div>'
     + '<div class="kpi-lbl" style="color:rgba(255,255,255,.6)">Saldo ' + _rentMesLabel(D.mes) + ' · ' + (aPagar ? 'a pagar' : 'a favor') + '</div>'
     + '<div class="kpi-val" style="color:' + (aPagar ? '#FF8A8A' : '#6EE7A0') + '">' + fmt(Math.abs(D.saldo)) + '</div>'
-    + '<div style="' + fs(10, 14) + ';color:rgba(255,255,255,.5);margin-top:4px">Débito − crédito. No incluye saldo a favor de meses anteriores, retenciones ni percepciones.</div></div>'
+    + '<div style="' + fs(10, 14) + ';color:rgba(255,255,255,.5);margin-top:4px">Débito − crédito. Incluye las percepciones de IVA de las facturas de proveedores. No incluye saldo a favor de meses anteriores ni retenciones.</div></div>'
     + '</div>';
 
   // ── Débito ──
@@ -10359,6 +10421,7 @@ function ivaRender() {
   h += _ivaFila('🏭 Gastos fábrica (Rentabilidad)', D.gastosFab.length ? D.gastosFab.map(g => _esc(g.item)).join(', ') : 'Ninguno marcado 🧾 Factura A', fmt(D.credGFab));
   h += _ivaFila('🏪 Gastos Rondeau (Rentabilidad)', D.gastosRon.length ? D.gastosRon.map(g => _esc(g.item)).join(', ') : 'Ninguno marcado 🧾 Factura A', fmt(D.credGRon));
   h += _ivaFila('✍️ Facturas cargadas a mano', D.manuales.length + ' factura' + (D.manuales.length !== 1 ? 's' : ''), fmt(D.credMan));
+  h += _ivaFila('🧾 Percepciones de IVA (proveedores)', D.percIva.length ? D.percIva.map(p => _esc(p.prov) + (p.nc ? ' (NC)' : '')).join(', ') : 'Ninguna en el mes', fmt(D.credPerc));
   h += '</div>';
   h += '<div style="padding:0 16px 12px;' + fs(11, 15) + ';color:var(--gris)">Los gastos se marcan en <a href="#" onclick="goTo(\'rentabilidad\');return false" style="color:var(--dorado);font-weight:600">Rentabilidad</a> con el botón 🧾 Factura A de cada gasto y se guardan con "Guardar mes".</div>';
 
@@ -10373,7 +10436,7 @@ function ivaRender() {
     h += '<div class="list-card" style="margin:0 16px 14px">' + D.compras.slice().reverse().map(c => {
       const btn = (val, txt) => '<button type="button" class="gfa-btn' + (c.fa === val ? ' on' : '') + '" onclick="ivaCompraMarcar(' + c.fila + ',\'' + val + '\')">' + txt + '</button>';
       return '<div class="list-row" style="cursor:default;flex-wrap:wrap;align-items:center">'
-        + '<div style="flex:1;min-width:150px;padding-right:8px"><div class="lr-name" style="' + fs(12, 16) + ';font-weight:600">' + _esc(c.insumo) + '</div>'
+        + '<div style="flex:1;min-width:150px;padding-right:8px"><div class="lr-name" style="' + fs(12, 16) + ';font-weight:600">' + _esc(c.insumo) + (c.nc ? ' <span class="cf-chip rojo">NC</span>' : '') + '</div>'
         + '<div class="lr-sub">' + _esc(c.fecha) + (c.prov ? ' · ' + _esc(c.prov) : '') + ' · neto ' + fmt(c.neto) + (c.fact ? ' · Fact. ' + _esc(c.fact) : '') + '</div></div>'
         + '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end">' + btn('SI', '🧾 Con A') + btn('NO', 'Sin A')
         + (c.fa === 'SI' ? '<input class="fi" type="text" inputmode="decimal" value="' + fmt(c.iva) + '" style="width:120px;padding:5px 8px;text-align:right" onfocus="rentInputFocus(this)" onblur="ivaCompraIva(' + c.fila + ',this)">' : '')
@@ -14630,7 +14693,7 @@ async function loadInsumosLists() {
   // precioCompra (col F) = precio NETO real pagado al proveedor → usado solo en pantalla de Compras
   // BULTO (u/kg) agregado (v4.65): col E de Insumos!B5:K300 = índice 3 —
   // necesario para el registro de compras por kg real en insumos de peso
-  // variable (ver CATEGORIAS_PESO_VARIABLE / onCompInsumo / confirmaComp).
+  // variable (ver CATEGORIAS_PESO_VARIABLE / cfOnInsumo / _cfLeerRenglonForm).
   if (insRows) insRows.forEach((r,i) => { const n=r[0]?.toString().trim(); if(n) insMap[n]={fila:i+5, precio:parseAR(r[8]), precioBruto:parseAR(r[9]), precioCompra:parseAR(r[4]), proveedor:r[2]?.toString().trim()||'', bulto:parseAR(r[3])||0}; });
   // Stock MP cols: A=COD(r[0]), B=DESCRIPCIÓN(r[1]), C=CATEG(r[2]), D=PROVEEDOR(r[3]), E=BULTO(r[4]), F=STOCK(r[5]), G=STOCK_MIN(r[6])
   // 'categoria' agregado (v4.65), mismo motivo que 'bulto' arriba.
@@ -16135,301 +16198,636 @@ function limpiarRemito() {
 }
 
 // ── COMPRAS ──────────────────────────────────────────────────
-async function onCompInsumo() {
-  const idx = document.getElementById('compInsumo').value;
-  if (!idx) { document.getElementById('compInfo').style.display='none'; return; }
-  const ins = INSUMOS[parseInt(idx)];
-  document.getElementById('compStockAct').textContent = ins.stock.toFixed(2);
-  document.getElementById('compPrecioAct').textContent = fmtN(ins.precioCompra);
-  document.getElementById('compPrecioBruto').textContent = fmtB(ins.precioCompra * 1.21);
-  document.getElementById('compUltFechaVal').textContent = 'buscando...';
-  document.getElementById('compUltProv').textContent = '—';
-  document.getElementById('compInfo').style.display = 'block';
-  // v4.65: insumos de peso variable (VARIEGATTO y similares — ver
-  // CATEGORIAS_PESO_VARIABLE) piden kg reales + precio total en vez de
-  // cantidad de bultos + precio/bulto. Ver calcComp()/confirmaComp() para
-  // la conversión interna a "bultos equivalentes" (Stock MP no cambia de
-  // unidad, solo cambia qué se le pide al usuario acá).
+// ══════════════════════════════════════════════════════════════════
+// v5.00 (28/10/2026, pedido de Nico) — INGRESO DE MERCADERÍA POR COMPROBANTE
+// Antes se cargaba un insumo por vez. Ahora se carga la factura (o la nota de
+// crédito) del proveedor completa:
+//   · Encabezado: proveedor, N°, fecha, Factura A sí/no, condición de pago
+//     (contado / cuenta corriente — se elige sola si el proveedor tiene hoja
+//     de Cta. Cte. en "Proveedores") y quién recibe y controla.
+//   · Renglones: insumo, cantidad, precio NETO (ya con el descuento aplicado)
+//     e IVA del renglón (21% por defecto, 10,5% o 27%). Cada renglón muestra
+//     la variación contra el último precio neto: verde si bajó o quedó igual,
+//     amarillo si subió hasta 10%, rojo si subió más de 10%.
+//     En una NC, cada renglón puede ser "sin devolución" (bonificación): no
+//     toca el stock, solo la plata y el IVA.
+//   · Pie: subtotal, IVA por alícuota (calculado, editable), percepciones
+//     (IIBB, IVA, municipal) y el total del papel → control ✅ / ❌.
+//   · Un solo Confirmar: todo se graba junto en el servidor
+//     ('compraComprobante' en Code.gs): stock, precios, Log Compras,
+//     "Compras Comprobantes" y Cta. Cte. del proveedor. Si se corta la red,
+//     se vuelve a tocar Confirmar: mismo ID → nunca se graba dos veces.
+//   · Lo que se va cargando queda guardado en este dispositivo (borrador)
+//     hasta confirmar o descartar.
+// Anulación (solo admin, desde "Últimas compras"): el comprobante entero o un
+// renglón suelto — ver _ccAnularBajoLock_ en Code.gs.
+// ══════════════════════════════════════════════════════════════════
+const _CF_KEY = 'lc_compBorrador_v1';
+const _CF_ALICS = [21, 10.5, 27];
+let CF = null;
+let _cfEnviando = false;
+
+function _cfHoyISO() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function _cfNuevoId() { return 'CP-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8); }
+function _cfVacio(tipo) {
+  return { id: _cfNuevoId(), tipo: tipo || 'FACTURA', prov: '', num: '', fecha: _cfHoyISO(), resp: '', fa: null, cond: null, condManual: false,
+           renglones: [], ivaMan: {}, perc: { iibb: '', iva: '', muni: '' }, total: '', alic: 21, editIdx: -1 };
+}
+function _cfR2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+function _cfNorm(s) { return String(s == null ? '' : s).trim().toUpperCase(); }
+function _cfNum(v) { const n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) ? 0 : n; }
+function _cfRenglonesTxt(n) { return n + (n === 1 ? ' renglón' : ' renglones'); }
+function _cfAlicTxt(a) { return String(a).replace('.', ',') + '%'; }
+function _cfFmtCant(n) { return (Number(n) || 0).toLocaleString('es-AR', { maximumFractionDigits: 3 }); }
+function _cfTog(id, on, cls) { const el = document.getElementById(id); if (el) el.classList.toggle(cls || 'act', !!on); }
+function _cfGuardar() { try { localStorage.setItem(_CF_KEY, JSON.stringify(CF)); } catch (e) {} }
+function _cfCargarBorrador() {
+  try {
+    const o = JSON.parse(localStorage.getItem(_CF_KEY) || 'null');
+    if (o && o.id && Array.isArray(o.renglones)) {
+      const base = _cfVacio(o.tipo);
+      return Object.assign(base, o, { perc: Object.assign(base.perc, o.perc || {}), ivaMan: o.ivaMan || {} });
+    }
+  } catch (e) {}
+  return null;
+}
+function _cfHayDatos() { return !!(CF && (CF.renglones.length || CF.prov || CF.num || CF.total)); }
+function _cfProvCta(nom) {
+  const n = _cfNorm(nom);
+  if (!n) return null;
+  return (PROVEEDORES || []).find(p => _cfNorm(p.nom) === n && p.sheet) || null;
+}
+
+async function cfInit() {
+  if (!CF) CF = _cfCargarBorrador() || _cfVacio('FACTURA');
+  CF.editIdx = -1; // al volver a la pantalla nunca queda un renglón "en edición"
+  _cfPintarEncabezado();
+  _cfLimpiarRenglonForm(true);
+  _cfRender();
+  try { await loadProveedores(); } catch (e) {}
+  _cfPoblarProveedores();
+  cfOnProv();
+}
+function _cfPoblarProveedores() {
+  const dl = document.getElementById('compProvList');
+  if (!dl) return;
+  const ya = new Set(Array.from(dl.options).map(o => _cfNorm(o.value)));
+  (PROVEEDORES || []).forEach(p => {
+    if (ya.has(_cfNorm(p.nom))) return;
+    const o = document.createElement('option'); o.value = p.nom; dl.appendChild(o); ya.add(_cfNorm(p.nom));
+  });
+}
+function _cfPintarEncabezado() {
+  const nc = CF.tipo === 'NC';
+  const set = (id, v) => { const el = document.getElementById(id); if (el && el.value !== v) el.value = v; };
+  set('cfProv', CF.prov || ''); set('cfNum', CF.num || ''); set('cfFecha', CF.fecha || ''); set('cfResp', CF.resp || '');
+  _cfTog('cfTipoFC', !nc); _cfTog('cfTipoNC', nc);
+  _cfTog('cfFaSi', CF.fa === true); _cfTog('cfFaNo', CF.fa === false);
+  _cfTog('cfCondCont', CF.cond === 'CONTADO'); _cfTog('cfCondCta', CF.cond === 'CTA CTE');
+  const lbl = document.getElementById('cfNumLbl'); if (lbl) lbl.textContent = nc ? 'N° de nota de crédito' : 'N° de factura';
+  const sd = document.getElementById('cfSinDevBox'); if (sd) sd.style.display = nc ? 'flex' : 'none';
+}
+function cfSetTipo(t) {
+  if (!CF) return;
+  CF.tipo = t === 'NC' ? 'NC' : 'FACTURA';
+  if (CF.tipo !== 'NC') CF.renglones.forEach(r => { r.sinDev = false; });
+  _cfPintarEncabezado(); cfOnProv(); cfCalcRenglon(); _cfRender(); _cfGuardar();
+}
+function cfSetFA(v) { CF.fa = v; _cfPintarEncabezado(); _cfRenderPie(); _cfGuardar(); _cfActualizarBoton(); }
+function cfSetCond(c) { CF.cond = c; CF.condManual = true; cfOnProv(); }
+function cfLeerEncabezado() {
+  CF.num = (document.getElementById('cfNum').value || '').trim();
+  CF.fecha = document.getElementById('cfFecha').value || '';
+  CF.resp = (document.getElementById('cfResp').value || '').trim();
+  _cfGuardar(); _cfActualizarBoton();
+}
+function cfOnProv() {
+  if (!CF) return;
+  const el = document.getElementById('cfProv');
+  if (el) CF.prov = (el.value || '').trim();
+  const p = _cfProvCta(CF.prov);
+  if (!CF.condManual) CF.cond = CF.prov ? (p ? 'CTA CTE' : 'CONTADO') : null;
+  const nota = document.getElementById('cfCondNota');
+  if (nota) {
+    let txt = '', cls = '';
+    if (CF.cond === 'CTA CTE') {
+      if (p) { txt = '📒 Se anota en la cuenta corriente de ' + p.nom + (CF.tipo === 'NC' ? ' (baja la deuda).' : '.'); cls = 'ok'; }
+      else if (CF.prov) { txt = '⚠️ ' + CF.prov + ' no tiene cuenta corriente en la app. Elegí Contado o dalo de alta en la hoja "Proveedores".'; cls = 'mal'; }
+    } else if (CF.cond === 'CONTADO' && p) {
+      txt = 'Este proveedor tiene cuenta corriente: con Contado no se anota ahí.';
+    }
+    nota.textContent = txt; nota.className = 'cf-nota ' + cls; nota.style.display = txt ? 'block' : 'none';
+  }
+  _cfTog('cfCondCont', CF.cond === 'CONTADO'); _cfTog('cfCondCta', CF.cond === 'CTA CTE');
+  _cfGuardar(); _cfActualizarBoton();
+}
+
+// ── Renglón (formulario de carga) ──
+function cfSetAlic(a) {
+  if (CF) CF.alic = a;
+  _cfTog('cfAlic21', a === 21, 'on'); _cfTog('cfAlic105', a === 10.5, 'on'); _cfTog('cfAlic27', a === 27, 'on');
+  cfCalcRenglon();
+}
+function cfOnInsumo() {
+  const sel = document.getElementById('compInsumo');
+  const idx = sel ? sel.value : '';
+  const ins = idx !== '' ? INSUMOS[parseInt(idx)] : null;
   const pesoVar = _esInsumoPesoVariable(ins);
   const cantLbl = document.getElementById('compCantLbl');
   const precioLbl = document.getElementById('compPrecioLbl');
   const nota = document.getElementById('compPesoVarNota');
   if (cantLbl) cantLbl.textContent = pesoVar ? 'Kg totales recibidos' : 'Cantidad (bultos)';
-  // v4.87: aclarar SIEMPRE neto/bruto (antes "Precio total pagado" era ambiguo: la app lo toma NETO).
   if (precioLbl) precioLbl.textContent = pesoVar ? 'Precio total — NETO (sin IVA)' : 'Precio por bulto — NETO (sin IVA)';
   if (nota) nota.style.display = pesoVar ? 'block' : 'none';
-  calcComp();
-  // Releer el stock fresco desde Stock MP (el cacheado en INSUMOS puede haber quedado viejo
-  // si alguien editó el Sheet a mano después de que arrancó la sesión)
-  if (ins.filaStock) {
-    try {
-      const rFresco = await readRange('Stock MP!F'+ins.filaStock);
-      const valFresco = rFresco?.[0]?.[0];
-      if (valFresco !== undefined && valFresco !== null && valFresco !== '') {
-        ins.stock = parseAR(valFresco);
-        document.getElementById('compStockAct').textContent = ins.stock.toFixed(2);
-        calcComp();
-      }
-    } catch(e) { console.warn('No se pudo refrescar stock de '+ins.nom, e); }
-  }
-  // Buscar fecha y proveedor de última compra en Log Compras
-  // Cols: A=#, B=FECHA, C=INSUMO, D=CANT, E=PRECIO, F=TOT NETO, G=TOT BRUTO, H=RESP, I=FACTURA, J=PROVEEDOR
-  try {
-    const logRows = await readRange('Log Compras!A5:J5000');
-    let ultFecha = null, ultProv = null;
-    if (logRows) {
-      for (let i = logRows.length - 1; i >= 0; i--) {
-        const r = logRows[i];
-        const nom = r[2]?.toString().trim(); // col C = INSUMO (índice 2 porque A es índice 0)
-        if (nom === ins.nom && r[1]) {
-          ultFecha = r[1].toString().trim();
-          ultProv  = r[9]?.toString().trim() || null; // col J = PROVEEDOR
-          break;
-        }
-      }
-    }
-    document.getElementById('compUltFechaVal').textContent = ultFecha || 'sin registros';
-    document.getElementById('compUltProv').textContent = ultProv || 'sin datos';
-  } catch(e) {
-    document.getElementById('compUltFechaVal').textContent = 'sin datos';
-    document.getElementById('compUltProv').textContent = 'sin datos';
-  }
+  cfCalcRenglon();
 }
-// ── v4.98: Factura A en Ingreso de Mercadería (IVA crédito) ──────────────
-// COMP_FA: null = sin elegir (obligatorio elegir antes de confirmar),
-// true = con factura A (se guarda el IVA en Log Compras col. L), false = sin.
-let COMP_FA = null;
-let COMP_NETO_ACTUAL = 0;
-let COMP_IVA_MANUAL = false; // si el IVA se tipeó a mano, no se pisa al cambiar cantidad/precio
-function compSetFacturaA(v) {
-  COMP_FA = v;
-  const si = document.getElementById('compFaSi'), no = document.getElementById('compFaNo');
-  if (si) si.classList.toggle('act', v === true);
-  if (no) no.classList.toggle('act', v === false);
-  const box = document.getElementById('compIvaBox');
-  if (box) box.style.display = v === true ? 'grid' : 'none';
-  if (v !== true) {
-    COMP_IVA_MANUAL = false;
-    const inp = document.getElementById('compIva'); if (inp) inp.value = '';
-    const al = document.getElementById('compIvaAlic'); if (al) al.value = '21';
-  } else {
-    compIvaRecalc(false);
-  }
-}
-function compIvaRecalc(forzar) {
-  if (COMP_FA !== true) return;
-  if (forzar) COMP_IVA_MANUAL = false;
-  if (COMP_IVA_MANUAL) return;
-  const alic = parseFloat((document.getElementById('compIvaAlic') || {}).value) || 21;
-  const inp = document.getElementById('compIva');
-  if (inp) inp.value = COMP_NETO_ACTUAL > 0 ? (Math.round(COMP_NETO_ACTUAL * alic) / 100).toFixed(2) : '';
-}
-
-function calcComp() {
-  const idx = document.getElementById('compInsumo').value;
-  const cant = parseFloat(document.getElementById('compCant').value)||0;      // bultos, o kg reales si peso variable
-  const precio = parseFloat(document.getElementById('compPrecio').value)||0; // precio/bulto, o precio TOTAL si peso variable
-  if (!idx || cant<=0) { COMP_NETO_ACTUAL = 0; compIvaRecalc(false); document.getElementById('compPrev').style.display='none'; document.getElementById('btnComp').disabled=true; document.getElementById('btnComp').style.opacity='.5'; return; }
+function _cfLeerRenglonForm() {
+  const sel = document.getElementById('compInsumo');
+  const idx = sel ? sel.value : '';
+  if (idx === '' || idx == null) return null;
   const ins = INSUMOS[parseInt(idx)];
+  if (!ins) return null;
+  const cant = _cfNum(document.getElementById('compCant').value);
+  const precio = _cfNum(document.getElementById('compPrecio').value);
   const pesoVar = _esInsumoPesoVariable(ins);
-  // v4.65: para peso variable, 'cant' son KG reales — se convierten a
-  // "bultos equivalentes" con el mismo tamaño de bulto de catálogo
-  // (Insumos!BULTO) para que Stock MP siga en la misma unidad de siempre.
-  // Si el insumo no tiene tamaño de bulto cargado (bulto=0), se usa 1 como
-  // resguardo para no dividir por cero (no debería pasar en la práctica).
-  const bultoSize = pesoVar ? (ins.bulto || 1) : 1;
-  const bultosEq = pesoVar ? (cant / bultoSize) : cant;
-  const precioTotal = pesoVar ? precio : cant * (precio || ins.precioCompra);
-  const precioPorBultoEquiv = bultosEq > 0 ? (precio > 0 ? precioTotal / bultosEq : ins.precioCompra) : ins.precioCompra;
-
-  document.getElementById('compNuevoStock').textContent = (ins.stock + bultosEq).toFixed(2) + ' bultos' + (pesoVar ? (' (+' + bultosEq.toFixed(2) + ' de esta compra)') : '');
-  document.getElementById('compTotal').textContent = fmtN(precioTotal);
-  COMP_NETO_ACTUAL = precioTotal || 0; // v4.98: base del IVA de la compra
-  compIvaRecalc(false);
-  // Variación de precio — siempre comparada en la misma unidad (precio
-  // "por bulto de catálogo"), así el % es válido también para peso variable.
-  const varEl = document.getElementById('compVarPrecio');
-  const varVal = document.getElementById('compVarVal');
-  if (precio > 0 && ins.precioCompra > 0) {
-    const diff = precioPorBultoEquiv - ins.precioCompra;
-    const pct = (diff / ins.precioCompra) * 100;
-    const sube = diff > 0;
-    const igual = Math.abs(pct) < 0.01;
-    if (igual) {
-      varVal.textContent = '= Sin cambio de precio';
-      varVal.style.color = 'rgba(255,255,255,.6)';
-    } else {
-      varVal.textContent = (sube ? '▲ +' : '▼ ') + pct.toFixed(1) + '%  (' + (sube ? '+' : '') + fmtN(diff) + '/bulto)';
-      varVal.style.color = sube ? '#FF9999' : '#4ADE80';
-    }
-    varEl.style.display = 'block';
+  // Peso variable (v4.65): kg reales + precio TOTAL → "bultos equivalentes"
+  // con el tamaño de bulto de catálogo, así Stock MP / Insumos siguen en la
+  // misma unidad de siempre.
+  const bultosEq = pesoVar ? cant / (ins.bulto || 1) : cant;
+  const netoRaw = pesoVar ? precio : cant * precio;
+  const precioBulto = bultosEq > 0 ? netoRaw / bultosEq : 0;
+  const sdEl = document.getElementById('cfSinDev');
+  return {
+    nom: ins.nom, pesoVar, cantUser: cant, precioUser: precio, bultosEq, precioBulto,
+    neto: _cfR2(bultosEq * precioBulto), alic: (CF && CF.alic) || 21,
+    sinDev: !!(CF && CF.tipo === 'NC' && sdEl && sdEl.checked),
+    precioAnt: ins.precioCompra || 0
+  };
+}
+// Variación vs el último precio neto (Insumos col. F): verde ≤ 0%, amarillo
+// hasta +10%, rojo más de +10%. Solo en facturas.
+function _cfVarHTML(r) {
+  if (!CF || CF.tipo === 'NC' || !(r.precioBulto > 0) || !(r.precioAnt > 0)) return '';
+  const pct = (r.precioBulto - r.precioAnt) / r.precioAnt * 100;
+  const cls = pct <= 0.05 ? 'v' : (pct <= 10 ? 'a' : 'r');
+  const txt = Math.abs(pct) < 0.05 ? '= 0%' : ((pct > 0 ? '+' : '−') + Math.abs(pct).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '%');
+  return '<span class="cf-var ' + cls + '">' + txt + ' (antes ' + fmt(r.precioAnt) + ')</span>';
+}
+function cfCalcRenglon() {
+  const r = _cfLeerRenglonForm();
+  const prev = document.getElementById('cfRPrev');
+  const btn = document.getElementById('cfBtnRenglon');
+  const okR = !!(r && r.bultosEq > 0);
+  if (btn) { btn.disabled = !okR; btn.style.opacity = okR ? '1' : '.5'; }
+  if (!prev) return;
+  if (!okR) { prev.style.display = 'none'; prev.innerHTML = ''; return; }
+  let h = '<span>Neto <b>' + fmt(r.neto) + '</b></span><span style="color:var(--gris)">IVA ' + _cfAlicTxt(r.alic) + ' ' + fmt(r.neto * r.alic / 100) + '</span>';
+  if (r.pesoVar) h += '<span style="color:var(--gris)">= ' + _cfFmtCant(r.bultosEq) + ' bultos equiv.</span>';
+  const v = _cfVarHTML(r);
+  if (v) h += v;
+  if (!(r.precioBulto > 0)) h += '<span style="color:var(--gris)">Sin precio: no cambia el precio del insumo</span>';
+  if (r.sinDev) h += '<span style="color:var(--gris)">Sin devolución: no toca el stock</span>';
+  prev.innerHTML = h; prev.style.display = 'flex';
+}
+function cfAgregarRenglon() {
+  const r = _cfLeerRenglonForm();
+  if (!r) { showToast('⚠️ Elegí el insumo'); return false; }
+  if (!(r.bultosEq > 0)) { showToast('⚠️ Cargá la cantidad'); return false; }
+  if (!(r.precioUser > 0) && !confirm('Este renglón no tiene precio ($0). ¿Agregarlo igual? (no cambia el precio del insumo)')) return false;
+  if (CF.editIdx >= 0 && CF.editIdx < CF.renglones.length) {
+    CF.renglones[CF.editIdx] = r;
+    showToast('✅ Renglón actualizado');
   } else {
-    varEl.style.display = 'none';
+    CF.renglones.push(r);
   }
-  document.getElementById('compPrev').style.display='block';
-  document.getElementById('btnComp').disabled=false; document.getElementById('btnComp').style.opacity='1';
+  _cfLimpiarRenglonForm();
+  _cfGuardar(); _cfRender();
+  return true;
 }
-async function confirmaComp() {
-  const idx = document.getElementById('compInsumo').value;
-  const cant = parseFloat(document.getElementById('compCant').value)||0;
-  const precio = parseFloat(document.getElementById('compPrecio').value)||0;
-  const resp = document.getElementById('compResp').value||'';
-  const fact = document.getElementById('compFact').value||'';
-  const prov = document.getElementById('compProv').value||'';
-  if (!idx||cant<=0) { showToast('⚠️ Completá los datos'); return; }
-  // v4.98: obligatorio marcar si viene con Factura A (para el IVA crédito)
-  if (COMP_FA === null) { showToast('⚠️ Marcá si la compra viene con factura A o sin factura A'); return; }
-  const compFaSi = COMP_FA === true;
-  const compIvaVal = compFaSi ? (parseFloat(document.getElementById('compIva').value) || 0) : 0;
-  if (compFaSi && compIvaVal <= 0 && !confirm('La compra está marcada con factura A pero el IVA es $0. ¿Guardarla igual?')) return;
-  const btnC = document.getElementById('btnComp');
-  btnC.disabled = true; btnC.textContent = '⏳ Guardando...'; btnC.style.opacity = '.6';
-  let ok = true;
+function _cfLimpiarRenglonForm(sinFoco) {
+  const sel = document.getElementById('compInsumo');
+  if (sel) { sel.value = ''; _ssUpdateLabel(sel); }
+  ['compCant', 'compPrecio'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const sd = document.getElementById('cfSinDev'); if (sd) sd.checked = false;
+  if (CF) CF.editIdx = -1;
+  const f = document.getElementById('cfRForm'); if (f) f.classList.remove('editando');
+  const b = document.getElementById('cfBtnRenglon'); if (b) b.textContent = '＋ Agregar renglón';
+  const c = document.getElementById('cfBtnCancelEdit'); if (c) c.style.display = 'none';
+  cfSetAlic(21);
+  cfOnInsumo();
+}
+function cfCancelarEdicion() { _cfLimpiarRenglonForm(); _cfRender(); }
+function cfEditarRenglon(i) {
+  const r = CF.renglones[i];
+  if (!r) return;
+  const idx = INSUMOS.findIndex(x => _cfNorm(x.nom) === _cfNorm(r.nom));
+  const sel = document.getElementById('compInsumo');
+  if (idx < 0 || !sel) { showToast('⚠️ No encontré ese insumo en la lista'); return; }
+  sel.value = String(idx); _ssUpdateLabel(sel);
+  if (sel.value !== String(idx)) { showToast('⚠️ Ese insumo no está en la lista de compras'); return; }
+  cfOnInsumo();
+  document.getElementById('compCant').value = r.cantUser;
+  document.getElementById('compPrecio').value = r.precioUser;
+  const sd = document.getElementById('cfSinDev'); if (sd) sd.checked = !!r.sinDev;
+  CF.editIdx = i;
+  cfSetAlic(r.alic);
+  const f = document.getElementById('cfRForm'); if (f) { f.classList.add('editando'); f.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  const b = document.getElementById('cfBtnRenglon'); if (b) b.textContent = '✓ Guardar renglón';
+  const c = document.getElementById('cfBtnCancelEdit'); if (c) c.style.display = 'block';
+  _cfRender();
+}
+function cfBorrarRenglon(i) {
+  const r = CF.renglones[i];
+  if (!r || !confirm('¿Sacar el renglón "' + r.nom + '"?')) return;
+  CF.renglones.splice(i, 1);
+  if (CF.editIdx === i) _cfLimpiarRenglonForm();
+  else if (CF.editIdx > i) CF.editIdx--;
+  _cfGuardar(); _cfRender();
+}
+
+// ── Totales / control ──
+function _cfTotales() {
+  const sub = _cfR2(CF.renglones.reduce((a, r) => a + r.neto, 0));
+  const iva = {};
+  _CF_ALICS.forEach(a => {
+    const base = CF.renglones.filter(r => r.alic === a).reduce((s, r) => s + r.neto, 0);
+    const calc = _cfR2(base * a / 100);
+    const m = CF.ivaMan ? CF.ivaMan[a] : undefined;
+    const man = (m !== undefined && m !== '') ? _cfR2(_cfNum(m)) : null;
+    iva[a] = { base: _cfR2(base), calc, val: man !== null ? man : calc, manual: man !== null, usado: base > 0 || a === 21 || man !== null };
+  });
+  const perc = { iibb: _cfR2(_cfNum(CF.perc.iibb)), iva: _cfR2(_cfNum(CF.perc.iva)), muni: _cfR2(_cfNum(CF.perc.muni)) };
+  const ivaTot = _CF_ALICS.reduce((s, a) => s + iva[a].val, 0);
+  const calculado = _cfR2(sub + ivaTot + perc.iibb + perc.iva + perc.muni);
+  const total = (CF.total === '' || CF.total == null) ? null : _cfR2(_cfNum(CF.total));
+  const dif = total === null ? null : _cfR2(total - calculado);
+  return { sub, iva, perc, calculado, total, dif };
+}
+function _cfRenderPie() {
+  const el = document.getElementById('cfPie');
+  if (!el || !CF) return;
+  const T = _cfTotales();
+  const inp = (k, v, ph) => '<input class="fi" type="number" inputmode="decimal" step="any" value="' + _esc(v) + '" placeholder="' + _esc(ph || '0') + '" oninput="cfPieInput(\'' + k + '\',this)">';
+  let h = '<div class="cf-prow"><span>Subtotal neto (renglones)</span><b id="cfSubTot">' + fmt(T.sub) + '</b></div>';
+  _CF_ALICS.forEach(a => {
+    const x = T.iva[a];
+    if (!x.usado) return;
+    const v = x.manual ? CF.ivaMan[a] : (x.calc ? String(x.calc) : '');
+    h += '<div class="cf-prow"><span>IVA ' + _cfAlicTxt(a) + (CF.fa === false ? ' <span style="color:var(--gris);font-size:.85em">(no computa crédito)</span>' : '')
+      + (x.manual && Math.abs(x.val - x.calc) >= 0.01 ? '<br><a href="#" onclick="cfIvaRecalc(' + a + ');return false" style="font-size:.85em;color:var(--gris)">↺ calculado: ' + fmt(x.calc) + '</a>' : '')
+      + '</span>' + inp('iva' + a, v) + '</div>';
+  });
+  h += '<div class="cf-prow"><span>Percepción de ingresos brutos</span>' + inp('iibb', CF.perc.iibb) + '</div>';
+  h += '<div class="cf-prow"><span>Percepción de IVA</span>' + inp('iva', CF.perc.iva) + '</div>';
+  h += '<div class="cf-prow"><span>Percepción municipal</span>' + inp('muni', CF.perc.muni) + '</div>';
+  h += '<div class="cf-prow"><span>Total calculado</span><b id="cfTotCalc">' + fmt(T.calculado) + '</b></div>';
+  h += '<div class="cf-prow tot"><span>Total de la ' + (CF.tipo === 'NC' ? 'nota de crédito' : 'factura') + ' (el del papel)</span>' + inp('total', CF.total) + '</div>';
+  h += '<div id="cfCtrl" class="cf-ctrl na"></div>';
+  el.innerHTML = h;
+  _cfActualizarControl();
+}
+function cfPieInput(k, el) {
+  const v = el.value;
+  if (k.indexOf('iva') === 0 && k !== 'iva') {
+    const a = Number(k.slice(3));
+    if (v === '') delete CF.ivaMan[a]; else CF.ivaMan[a] = v;
+  } else if (k === 'total') CF.total = v;
+  else CF.perc[k] = v;
+  _cfGuardar(); _cfActualizarControl();
+}
+function cfIvaRecalc(a) { delete CF.ivaMan[a]; _cfGuardar(); _cfRenderPie(); }
+function _cfActualizarControl() {
+  const T = _cfTotales();
+  const s = document.getElementById('cfSubTot'); if (s) s.textContent = fmt(T.sub);
+  const c = document.getElementById('cfTotCalc'); if (c) c.textContent = fmt(T.calculado);
+  const box = document.getElementById('cfCtrl');
+  if (box) {
+    if (!CF.renglones.length) { box.className = 'cf-ctrl na'; box.textContent = 'Agregá los renglones para controlar el total.'; }
+    else if (T.total === null) { box.className = 'cf-ctrl na'; box.textContent = 'Cargá el total del papel para controlar.'; }
+    else if (Math.abs(T.dif) < 1) { box.className = 'cf-ctrl ok'; box.textContent = '✅ Coincide con el total del papel'; }
+    else { box.className = 'cf-ctrl mal'; box.textContent = '❌ No coincide: ' + (T.dif > 0 ? 'faltan ' : 'sobran ') + fmt(Math.abs(T.dif)) + ' en lo cargado'; }
+  }
+  _cfActualizarBoton();
+}
+function _cfActualizarBoton() {
+  const btn = document.getElementById('btnComp');
+  if (btn && CF) {
+    const ok = CF.renglones.length > 0 && !_cfEnviando;
+    btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.5';
+    if (!_cfEnviando) btn.textContent = CF.tipo === 'NC' ? '✓ Confirmar nota de crédito' : '✓ Confirmar factura';
+  }
+  const d = document.getElementById('cfBtnDescartar');
+  if (d) d.style.display = _cfHayDatos() ? 'flex' : 'none';
+}
+function _cfRender() {
+  const el = document.getElementById('cfLista');
+  if (!el || !CF) return;
+  if (!CF.renglones.length) {
+    el.innerHTML = '<div class="cf-nota" style="margin:-2px 0 10px">Todavía no hay renglones. Cargá el primero acá abajo.</div>';
+  } else {
+    el.innerHTML = '<div class="cf-lista">' + CF.renglones.map((r, i) => {
+      const cantTxt = r.pesoVar
+        ? _cfFmtCant(r.cantUser) + ' kg · total ' + fmt(r.precioUser)
+        : _cfFmtCant(r.cantUser) + ' bulto' + (r.cantUser !== 1 ? 's' : '') + ' × ' + fmt(r.precioUser);
+      const v = _cfVarHTML(r);
+      return '<div class="cf-ren"' + (CF.editIdx === i ? ' style="background:var(--crema)"' : '') + '>'
+        + '<div class="cf-rn"><div class="cf-rt">' + (i + 1) + '. ' + _esc(r.nom) + '</div>'
+        + '<div class="cf-rs">' + cantTxt + ' · IVA ' + _cfAlicTxt(r.alic) + (r.sinDev ? ' · <b>sin devolución</b>' : '') + '</div>'
+        + (v ? '<div style="margin-top:4px">' + v + '</div>' : '') + '</div>'
+        + '<div class="cf-ra"><div class="cf-rm">' + fmt(r.neto) + '</div><div>'
+        + '<button type="button" class="cf-ib" onclick="cfEditarRenglon(' + i + ')" title="Editar">✏️</button>'
+        + '<button type="button" class="cf-ib" onclick="cfBorrarRenglon(' + i + ')" title="Sacar">🗑</button>'
+        + '</div></div></div>';
+    }).join('') + '</div>';
+  }
+  _cfRenderPie();
+  _cfActualizarBoton();
+}
+function cfDescartar() {
+  if (_cfEnviando) return;
+  if (_cfHayDatos() && !confirm('¿Descartar todo lo cargado de esta ' + (CF.tipo === 'NC' ? 'nota de crédito' : 'factura') + '? No se grabó nada todavía.')) return;
+  CF = _cfVacio(CF ? CF.tipo : 'FACTURA');
+  try { localStorage.removeItem(_CF_KEY); } catch (e) {}
+  _cfPintarEncabezado(); _cfLimpiarRenglonForm(); _cfRender(); cfOnProv();
+}
+
+// Reparte el IVA de cada alícuota (calculado o tipeado) entre sus renglones,
+// proporcional al neto, para que la suma por renglón dé exacto.
+function _cfRepartirIva(T) {
+  const out = CF.renglones.map(r => ({ nom: r.nom, cant: r.bultosEq, precio: r.precioBulto, alic: r.alic, iva: 0, sinDev: !!r.sinDev }));
+  _CF_ALICS.forEach(a => {
+    const idxs = CF.renglones.map((r, i) => r.alic === a ? i : -1).filter(i => i >= 0);
+    if (!idxs.length) return;
+    const objetivo = T.iva[a].val;
+    const base = T.iva[a].base;
+    let acum = 0;
+    idxs.forEach((i, k) => {
+      let v;
+      if (k === idxs.length - 1) v = _cfR2(objetivo - acum);
+      else v = base > 0 ? _cfR2(objetivo * CF.renglones[i].neto / base) : 0;
+      out[i].iva = v; acum = _cfR2(acum + v);
+    });
+  });
+  return out;
+}
+
+async function _cfEnviar(payload) {
+  let d = null;
+  for (let intento = 1; intento <= 3; intento++) {
+    try {
+      const r = await _fetchConTimeout(CFG.scriptUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(Object.assign({ token: SESION && SESION.token }, payload))
+      }, 45000, true);
+      d = await r.json();
+    } catch (e) { console.error('compraComprobante:', e); d = null; }
+    if (d && !(d.ok === false && d.ocupado)) return d;
+    if (intento < 3) await new Promise(res => setTimeout(res, 1500 * intento));
+  }
+  return d;
+}
+// Respuesta común de errores. Devuelve true si se manejó como error.
+function _cfManejarError(d, queHacia) {
+  if (!d) {
+    alert('⚠️ No hubo respuesta del servidor (' + queHacia + ').\n\nPuede que se haya grabado igual. Volvé a tocar el botón: es seguro, si ya se grabó no se duplica.');
+    _logErrorSilencioso('Compras', queHacia, 'sin respuesta del servidor');
+    return true;
+  }
+  if (d.authError) { _sesionVencida(); return true; }
+  if (d.ok === false && /unknown action/i.test(String(d.error || ''))) {
+    alert('Falta actualizar el Code.gs (editar el deployment activo → Nueva versión) para usar la carga por factura.');
+    return true;
+  }
+  if (d.ok === false && d.requiresManualReview) {
+    _logErrorSilencioso('Compras', queHacia + ' — a revisar', d.error || '');
+    alert('⚠️ ' + (d.error || 'La operación quedó a medias. Revisala a mano.'));
+    return true;
+  }
+  if (d.ok === false) {
+    alert('❌ No se grabó nada.\n\n' + (d.error || 'Error desconocido.'));
+    return true;
+  }
+  return false;
+}
+function _cfAplicarRespuesta(d) {
+  (d.stock || []).forEach(s => { const ins = INSUMOS.find(i => i.filaStock === s.fila); if (ins) ins.stock = Number(s.stock) || 0; });
+  (d.precios || []).forEach(p => {
+    const ins = p.filaIns ? INSUMOS.find(i => i.filaIns === p.filaIns) : INSUMOS.find(i => _cfNorm(i.nom) === _cfNorm(p.nom));
+    if (!ins) return;
+    ins.precioCompra = Number(p.precio) || 0;
+    if (p.prov !== undefined) ins.proveedor = p.prov;
+  });
+}
+
+async function cfConfirmar() {
+  if (_cfEnviando || !CF) return;
+  cfLeerEncabezado();
+  CF.prov = (document.getElementById('cfProv').value || '').trim();
+  const nc = CF.tipo === 'NC';
+  const nomC = nc ? 'nota de crédito' : 'factura';
+  const rPend = _cfLeerRenglonForm();
+  if (rPend && rPend.bultosEq > 0) {
+    if (!confirm('Tenés un renglón cargado abajo que todavía no agregaste (' + rPend.nom + ').\n\nAceptar: agregarlo y seguir.\nCancelar: volver sin confirmar.')) return;
+    if (!cfAgregarRenglon()) return;
+  }
+  if (!CF.prov) { showToast('⚠️ Falta el proveedor'); return; }
+  if (!CF.num) { showToast('⚠️ Falta el número de ' + nomC); return; }
+  if (!CF.fecha) { showToast('⚠️ Falta la fecha'); return; }
+  if (CF.fa === null) { showToast('⚠️ Marcá si es Factura A o no'); return; }
+  if (!CF.cond) { showToast('⚠️ Elegí la condición de pago'); return; }
+  const provCta = _cfProvCta(CF.prov);
+  if (CF.cond === 'CTA CTE' && !provCta) { alert(CF.prov + ' no tiene cuenta corriente en la app. Elegí Contado o dalo de alta en la hoja "Proveedores".'); return; }
+  if (!CF.renglones.length) { showToast('⚠️ Agregá al menos un renglón'); return; }
+  const T = _cfTotales();
+  if (T.total === null) {
+    if (!confirm('No cargaste el total de la ' + nomC + ' para controlar.\n\n¿Confirmar igual con el total calculado (' + fmt(T.calculado) + ')?')) return;
+  } else if (Math.abs(T.dif) >= 1) {
+    if (!confirm('⚠️ El total no coincide con lo cargado: ' + (T.dif > 0 ? 'faltan ' : 'sobran ') + fmt(Math.abs(T.dif)) + '.\n\nTotal del papel: ' + fmt(T.total) + '\nCalculado: ' + fmt(T.calculado) + '\n\n¿Confirmar igual?')) return;
+  }
+  const totalFinal = T.total !== null ? T.total : T.calculado;
+  const nDev = CF.renglones.filter(r => !r.sinDev).length;
+  if (!confirm('¿Confirmar la ' + nomC + ' ' + CF.num + ' de ' + CF.prov + '?\n\n'
+    + _cfRenglonesTxt(CF.renglones.length) + ' · Total ' + fmt(totalFinal) + '\n'
+    + (nc ? (nDev ? '• Se resta del stock lo devuelto\n' : '• No toca el stock (sin devolución)\n') : '• Se suma al stock y se actualizan los precios\n')
+    + (CF.cond === 'CTA CTE' ? '• Se anota en la cuenta corriente de ' + provCta.nom : '• Contado (no va a cuenta corriente)'))) return;
+
+  const comp = {
+    id: CF.id, tipo: CF.tipo, prov: CF.prov, num: CF.num, fecha: CF.fecha, fa: CF.fa, cond: CF.cond, resp: CF.resp,
+    renglones: _cfRepartirIva(T), perc: T.perc, total: totalFinal, usuario: (SESION && (SESION.name || SESION.nombre)) || ''
+  };
+  _cfEnviando = true;
+  const btn = document.getElementById('btnComp');
+  if (btn) { btn.disabled = true; btn.style.opacity = '.6'; btn.textContent = '⏳ Guardando...'; }
+  let d = null;
   try {
-    const ins = INSUMOS[parseInt(idx)];
-    // Leer stock fresco desde la API para no usar valor cacheado
-    let stockFresco = ins.stock;
-    if (ins.filaStock) {
-      try {
-        const r = await readRange('Stock MP!F'+ins.filaStock);
-        const val = r?.[0]?.[0];
-        if (val !== undefined && val !== null && val !== '') stockFresco = parseAR(val);
-      } catch(e) { console.warn('No se pudo leer stock fresco para '+ins.nom, e); }
-    }
-    // v4.65: para insumos de peso variable, 'cant' del formulario son KG
-    // REALES recibidos y 'precio' es el PRECIO TOTAL pagado (no por bulto)
-    // — ver calcComp() y el comentario de CATEGORIAS_PESO_VARIABLE. Acá se
-    // convierten a "bultos equivalentes" (misma unidad que ya usa Stock MP)
-    // y a "precio por bulto de catálogo" (misma unidad que ya usa
-    // Insumos!F) ANTES de escribir nada — el resto de la cadena (Stock MP,
-    // Log Compras, recetas, costeo) no se entera de que el insumo es de
-    // peso variable, sigue viendo bultos y precio/bulto como siempre.
-    const pesoVar = _esInsumoPesoVariable(ins);
-    const bultoSize = pesoVar ? (ins.bulto || 1) : 1;
-    const cantBultos = pesoVar ? (cant / bultoSize) : cant;
-    const precioTotalPagado = pesoVar ? precio : null;
-    const nuevoStock = stockFresco + cantBultos;
-    const nuevoPrecio = precio > 0
-      ? (pesoVar ? (precio / cantBultos) : precio)
-      : ins.precioCompra;
-    // v4.83 (08/10/2026): alerta de compra duplicada (origen: factura 600005997
-    // del 24/06 cargada dos veces). Se relee "Log Compras" en el momento — no
-    // la caché del historial — así lo que cargó otro dispositivo también cuenta.
-    const dup = await _compBuscarDuplicada(ins.nom, cantBultos, nuevoPrecio, fact);
-    if (dup && !confirm('⚠️ Ya hay una compra igual cargada:\n\n' + dup + '\n\n¿Cargarla igual?')) {
-      ok = false;
-      showToast('Compra no cargada');
-      return;
-    }
-    showToast('⏳ Actualizando...');
-    if (precio>0 && ins.filaIns) ok = await writeRange('Insumos!F'+ins.filaIns, nuevoPrecio);
-    // Si se cargó proveedor en esta compra, actualizar el proveedor vigente del insumo (col D de Insumos).
-    // Si no se cargó, no se toca la columna y se mantiene el que ya tenía.
-    if (ok && prov && ins.filaIns) ok = await writeRange('Insumos!D'+ins.filaIns, prov);
-    // v4.72b: suma verificada — si la conexión no la confirma, queda pendiente con reintento
-    // que no puede sumar dos veces, y la compra se registra igual (Log Compras) en vez de trabarse.
-    let _compPend = false;
-    if (ok && ins.filaStock) {
-      const rS = await _stockAjusteVerificado_('Stock MP!F'+ins.filaStock, cantBultos, stockFresco, { desc: ins.nom, unidad: 'bultos', origen: 'Compra', usuario: resp });
-      _compPend = !rS.ok;
-    }
-    if (ok) {
-      const fecha = new Date().toLocaleDateString('es-AR');
-      // Log Compras mantiene EXACTAMENTE el mismo formato de siempre
-      // (cantidad en bultos, precio/bulto) — cantBultos*nuevoPrecio da el
-      // precio total pagado real, por construcción (ver arriba).
-      // v4.98: K = FACTURA A ('SI'/'NO'), L = IVA de la compra (IVA crédito)
-      ok = await appendRowAt('Log Compras', 5, ['', fecha, ins.nom, cantBultos, nuevoPrecio, cantBultos*nuevoPrecio, cantBultos*nuevoPrecio*1.21, resp, fact, prov, compFaSi ? 'SI' : 'NO', compFaSi ? Math.round(compIvaVal * 100) / 100 : 0]);
-    }
-    if (ok) {
-      ins.stock=nuevoStock; if(precio>0) ins.precioCompra=nuevoPrecio; if(prov) ins.proveedor=prov;
-      showToast(_compPend ? '⏳ Compra registrada — la suma al stock quedó pendiente por la conexión y se reintenta sola (ver cartel amarillo)' : '✅ Compra registrada');
-      const detalleMov = pesoVar
-        ? (cant + ' kg (' + cantBultos.toFixed(2) + ' bultos equiv.) · ' + fmtN(precioTotalPagado) + ' total')
-        : (cant + ' bultos · ' + fmtN(nuevoPrecio) + '/u');
-      logMov('Compras', 'Ingreso de mercadería', ins.nom + ' · ' + detalleMov + (prov ? ' · Prov: ' + prov : '') + (compFaSi ? ' · Factura A, IVA ' + fmt(compIvaVal) : ' · Sin factura A'), resp);
-      undoClear('compras');
-      cargarComprasHist();
-      ['compInsumo','compCant','compPrecio','compResp','compFact','compProv'].forEach(id => document.getElementById(id).value='');
-      const selComp = document.getElementById('compInsumo');
-      if (selComp) { selComp.selectedIndex = 0; _ssUpdateLabel(selComp); }
-      document.getElementById('compInfo').style.display='none';
-      document.getElementById('compPrev').style.display='none';
-      const notaLimpia = document.getElementById('compPesoVarNota'); if (notaLimpia) notaLimpia.style.display='none';
-      compSetFacturaA(null); // v4.98: la próxima compra se vuelve a marcar
-    } else { showToast('❌ Error al actualizar'); }
-  } catch(e) {
-    ok = false;
-    console.error('Error en confirmaComp:', e);
-    showToast('❌ Error al registrar la compra. Probá de nuevo.');
+    d = await _cfEnviar({ action: 'compraComprobante', op: 'registrar', comp });
   } finally {
-    // El botón siempre vuelve a su texto original — nunca debe quedar pegado
-    // en "Guardando...". Si salió bien queda deshabilitado (form limpio);
-    // si hubo error, queda habilitado para reintentar (igual que antes).
-    btnC.textContent = '✓ Confirmar compra';
-    btnC.disabled = ok;
-    btnC.style.opacity = ok ? '.5' : '1';
+    _cfEnviando = false;
+    _cfActualizarBoton();
   }
+  if (_cfManejarError(d, 'cargar ' + nomC)) return;
+
+  _cfAplicarRespuesta(d);
+  logMov('Compras', nc ? 'Nota de crédito de proveedor' : 'Factura de proveedor',
+    CF.prov + ' · N° ' + CF.num + ' · ' + _cfRenglonesTxt(CF.renglones.length) + ' · total ' + fmt(totalFinal)
+    + (CF.fa ? ' · Factura A' : ' · Sin factura A') + (CF.cond === 'CTA CTE' ? ' · Cta. Cte.' : ' · Contado'), CF.resp);
+  showToast(d.duplicate ? '✅ Ya estaba grabada (no se duplicó)' : (nc ? '✅ Nota de crédito cargada' : '✅ Factura cargada'));
+  if (d.avisos && d.avisos.length) alert('Cargada, con avisos:\n\n• ' + d.avisos.join('\n• '));
+  const tipo = CF.tipo;
+  CF = _cfVacio(tipo);
+  try { localStorage.removeItem(_CF_KEY); } catch (e) {}
+  _cfPintarEncabezado(); _cfLimpiarRenglonForm(); _cfRender(); cfOnProv();
+  cargarComprasHist();
 }
-// v4.83: busca en "Log Compras" (filas NO anuladas) una compra igual a la que se
-// va a cargar: mismo insumo + misma fecha (hoy) + misma cantidad + mismo precio
-// unitario neto, o mismo N° de factura + mismo insumo. Devuelve un texto con la
-// compra encontrada, o null. Si no se puede leer la hoja, no bloquea (null).
-async function _compBuscarDuplicada(nom, cantBultos, precioUnit, factura) {
-  let rows;
-  try { rows = await readRange('Log Compras!A5:J5000'); } catch (e) { return null; }
-  if (!rows || !rows.length) return null;
-  const nomU = String(nom || '').trim().toUpperCase();
-  const hoyKey = _fechaKeyAR(new Date());
-  const normFact = v => { const t = String(v == null ? '' : v).trim(); const dig = t.replace(/\D/g, ''); return dig.length >= 4 ? dig : t.toUpperCase(); };
-  const factN = normFact(factura);
-  for (const r of rows) {
-    if (!r || !r[2]) continue;
-    if (String(r[0] || '').trim().toUpperCase() === 'ANULADA') continue;
-    const insR = String(r[2]).trim().toUpperCase();
-    if (insR.indexOf('ANULADA') !== -1 || insR !== nomU) continue;
-    const cantR = parseAR(r[3]) || 0, precR = parseAR(r[4]) || 0;
-    const mismaFecha = _fechaKeyAR(r[1]) === hoyKey;
-    const mismaCant = Math.abs(cantR - cantBultos) < 0.0001;
-    const mismoPrecio = Math.abs(precR - precioUnit) <= Math.max(0.01, Math.abs(precioUnit) * 1e-6);
-    const mismaFact = !!factN && normFact(r[8]) === factN;
-    if ((mismaFecha && mismaCant && mismoPrecio) || mismaFact) {
-      return (r[1] || '') + ' · ' + r[2] + ' · ' + cantR + ' bulto' + (cantR !== 1 ? 's' : '') + ' · ' + fmtN(precR) + '/u' +
-        (r[8] ? ' · Factura ' + r[8] : '') + (r[9] ? ' · ' + r[9] : '') +
-        (mismaFact && !(mismaFecha && mismaCant && mismoPrecio) ? '\n(mismo N° de factura y mismo insumo)' : '');
-    }
-  }
-  return null;
-}
-// ── Historial de compras — leído directo de "Log Compras" (no localStorage),
-//    así se puede deshacer cualquier compra, no solo las últimas de este dispositivo ──
-let _comprasHistCache = []; // [{ r: [fila cruda], filaReal }], más nuevas primero (se insertan siempre en fila 5)
+
+// (v5.00: se sacó el aviso de compra duplicada de la v4.83 — Nico decidió no avisar duplicados al cargar por factura.)
+
+// ── Historial de compras — leído directo de "Log Compras" (no localStorage) ──
+// v5.00: las compras cargadas por comprobante se agrupan por factura / NC
+// (col. M = ID, cabecera en "Compras Comprobantes"); las anteriores siguen
+// apareciendo de a una, con su ✕ de siempre.
+// _comprasHistCache = filas ACTIVAS que son compras (no NC), más nuevas primero —
+// la usan el buscador de precios y el Deshacer de las compras viejas.
+let _comprasHistCache = []; // [{ r: [fila cruda A..S], filaReal }]
+let _cfHistComp = {};       // id → { cab: [fila de "Compras Comprobantes"], filas: [{r, filaReal}] }
+let _cfHistEntradas = [];
+const _cfHistAbierto = {};
+function _cfFilaActiva(x) { return _cfNorm(x.r[0]) !== 'ANULADA' && _cfNorm(x.r[2]).indexOf('ANULADA') === -1; }
 async function cargarComprasHist() {
   const el = document.getElementById('compHist');
   if (!el) return;
   el.innerHTML = '<div class="ldots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
   try {
-    const rows = await readRange('Log Compras!A5:L5000');
-    // "appendRowAt" agrega SIEMPRE al final de los datos existentes (orden cronológico
-    // ascendente: lo más nuevo queda con el filaReal más alto, al final del array).
-    // Por eso acá se ordena descendente por filaReal antes de mostrar: más reciente primero.
-    _comprasHistCache = (rows||[])
-      .map((r,i) => ({ r, filaReal: 5+i }))
-      .filter(x => x.r[2] && (x.r[0]||'').toString().trim().toUpperCase() !== 'ANULADA')
-      .sort((a,b) => b.filaReal - a.filaReal);
-    if (!_comprasHistCache.length) { el.innerHTML = '<div class="empty"><div class="ei">📦</div><p>Sin compras registradas</p></div>'; return; }
-    const esAdmin = SESION?.tipo === 'admin';
-    const top = _comprasHistCache.slice(0, 30);
-    el.innerHTML = '<div class="list-card">' + top.map(x => {
-      const r = x.r;
-      const cant = parseAR(r[3])||0, precio = parseAR(r[4])||0, fecha = r[1]||'', prov = r[9]||'';
-      const btnX = esAdmin ? `<button onclick="abrirDeshacerCompra(${x.filaReal})" style="background:none;border:none;color:var(--gris);font-size:clamp(16px,calc(0.312vw + 14.5px),19px);cursor:pointer;padding:4px 6px;line-height:1;border-radius:6px;flex-shrink:0" title="Deshacer compra">✕</button>` : '';
-      return '<div class="list-row" style="position:relative"><div class="lr-left"><div class="lr-ico verde-bg">📦</div><div><div class="lr-name" style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px)">'+(r[2]||'')+'</div><div class="lr-sub">'+fecha+(prov?' · '+prov:'')+(String(r[10]||'').trim().toUpperCase()==='SI'?' · 🧾 Fact. A':'')+'</div></div></div><div style="display:flex;align-items:center;gap:8px"><div style="text-align:right"><div style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:700;color:var(--verde)">'+cant+' bultos</div><div style="font-size:clamp(10px,calc(0.417vw + 8.0px),14px);color:var(--gris)">'+fmtN(precio)+'/u</div></div>'+btnX+'</div></div>';
-    }).join('') + '</div>';
-  } catch(e) {
+    const rows = await readRange('Log Compras!A5:S5000');
+    if (rows === null) throw new Error('sin respuesta');
+    // "appendRowAt"/el servidor agregan SIEMPRE al final de los datos (lo más
+    // nuevo queda con el filaReal más alto) → se ordena descendente.
+    const todas = (rows || []).map((r, i) => ({ r, filaReal: 5 + i })).filter(x => x.r[2]);
+    _comprasHistCache = todas.filter(x => _cfFilaActiva(x) && _cfNorm(x.r[13]) !== 'NC').sort((a, b) => b.filaReal - a.filaReal);
+    const hayIds = todas.some(x => String(x.r[12] || '').trim());
+    let cabs = [];
+    if (hayIds) cabs = (await readRange('Compras Comprobantes!A2:V5000')) || [];
+    _cfHistComp = {};
+    cabs.forEach(c => { const id = String(c[0] || '').trim(); if (/^CP-[A-Za-z0-9-]+$/.test(id)) _cfHistComp[id] = { cab: c, filas: [] }; });
+    const entradas = [];
+    todas.forEach(x => {
+      const id = String(x.r[12] || '').trim();
+      if (id) {
+        if (!/^CP-[A-Za-z0-9-]+$/.test(id)) return;
+        if (!_cfHistComp[id]) _cfHistComp[id] = { cab: null, filas: [] };
+        _cfHistComp[id].filas.push(x);
+      } else if (_cfFilaActiva(x)) entradas.push({ tipo: 'legacy', orden: x.filaReal, x });
+    });
+    Object.keys(_cfHistComp).forEach(id => {
+      const g = _cfHistComp[id];
+      if (!g.filas.length) return;
+      entradas.push({ tipo: 'comp', id, orden: Math.max.apply(null, g.filas.map(f => f.filaReal)) });
+    });
+    entradas.sort((a, b) => b.orden - a.orden);
+    _cfHistEntradas = entradas.slice(0, 30);
+    _cfHistPintar();
+  } catch (e) {
     console.error('Error cargando historial de compras:', e);
     el.innerHTML = '<div class="empty"><div class="ei">⚠️</div><p>Error al cargar (no significa que no haya compras)</p></div>';
   }
+}
+function _cfHistPintar() {
+  const el = document.getElementById('compHist');
+  if (!el) return;
+  if (!_cfHistEntradas.length) { el.innerHTML = '<div class="empty"><div class="ei">📦</div><p>Sin compras registradas</p></div>'; return; }
+  el.innerHTML = '<div class="list-card">' + _cfHistEntradas.map(e => e.tipo === 'comp' ? _cfHistCompHTML(e.id) : _cfHistLegacyHTML(e.x)).join('') + '</div>';
+}
+function cfHistToggle(id) { _cfHistAbierto[id] = !_cfHistAbierto[id]; _cfHistPintar(); }
+function _cfHistLegacyHTML(x) {
+  const r = x.r;
+  const esAdmin = SESION?.tipo === 'admin';
+  const cant = parseAR(r[3]) || 0, precio = parseAR(r[4]) || 0, fecha = r[1] || '', prov = r[9] || '';
+  const btnX = esAdmin ? `<button onclick="abrirDeshacerCompra(${x.filaReal})" style="background:none;border:none;color:var(--gris);font-size:clamp(16px,calc(0.312vw + 14.5px),19px);cursor:pointer;padding:4px 6px;line-height:1;border-radius:6px;flex-shrink:0" title="Deshacer compra">✕</button>` : '';
+  return '<div class="list-row" style="position:relative"><div class="lr-left"><div class="lr-ico verde-bg">📦</div><div><div class="lr-name" style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px)">' + _esc(r[2] || '') + '</div><div class="lr-sub">' + _esc(fecha) + (prov ? ' · ' + _esc(prov) : '') + (String(r[10] || '').trim().toUpperCase() === 'SI' ? ' · 🧾 Fact. A' : '') + '</div></div></div><div style="display:flex;align-items:center;gap:8px"><div style="text-align:right"><div style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:700;color:var(--verde)">' + cant + ' bultos</div><div style="font-size:clamp(10px,calc(0.417vw + 8.0px),14px);color:var(--gris)">' + fmtN(precio) + '/u</div></div>' + btnX + '</div></div>';
+}
+function _cfHistCompHTML(id) {
+  const g = _cfHistComp[id];
+  const c = g.cab || [];
+  const r0 = g.filas[0].r;
+  const nc = _cfNorm(c[2] || r0[13]) === 'NC';
+  const prov = c[3] || r0[9] || '';
+  const num = c[4] || r0[8] || '';
+  const fecha = c[1] || r0[1] || '';
+  const estado = _cfNorm(c[16]);
+  const anulada = estado === 'ANULADA';
+  const total = c.length ? parseAR(c[15]) : g.filas.reduce((s, f) => s + Math.abs(parseAR(f.r[6])), 0);
+  const nAnul = g.filas.filter(f => !_cfFilaActiva(f)).length;
+  const esAdmin = SESION?.tipo === 'admin';
+  const abierto = !!_cfHistAbierto[id];
+  const chips = (anulada ? '<span class="cf-chip rojo">ANULADA</span>' : (nAnul ? '<span class="cf-chip rojo">' + _cfRenglonesTxt(nAnul) + ' anulado' + (nAnul !== 1 ? 's' : '') + '</span>' : ''))
+    + (estado && estado !== 'ACTIVA' && !anulada ? '<span class="cf-chip rojo">' + _esc(estado) + '</span>' : '');
+  let h = '<div class="list-row" style="cursor:pointer" onclick="cfHistToggle(\'' + id + '\')"><div class="lr-left"><div class="lr-ico ' + (nc ? 'rojo-bg' : 'verde-bg') + '">' + (nc ? '↩' : '🧾') + '</div><div>'
+    + '<div class="lr-name" style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px)">' + (nc ? 'NC ' : 'Factura ') + _esc(num) + ' · ' + _esc(prov) + chips + '</div>'
+    + '<div class="lr-sub">' + _esc(fecha) + ' · ' + _cfRenglonesTxt(g.filas.length)
+    + (String(c[5] || '').trim().toUpperCase() === 'SI' ? ' · 🧾 Fact. A' : '') + (_cfNorm(c[6]) === 'CTA CTE' ? ' · Cta. cte.' : (c.length ? ' · Contado' : '')) + '</div></div></div>'
+    + '<div style="text-align:right;flex-shrink:0;padding-left:8px"><div style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:700;color:' + (anulada ? 'var(--gris)' : (nc ? 'var(--rojo)' : 'var(--verde)')) + ';' + (anulada ? 'text-decoration:line-through' : '') + '">' + (nc ? '− ' : '') + fmt(total) + '</div>'
+    + '<div style="font-size:clamp(10px,calc(0.417vw + 8.0px),14px);color:var(--gris)">' + (abierto ? '▲ ocultar' : '▼ ver detalle') + '</div></div></div>';
+  if (abierto) {
+    h += '<div class="cf-hdet">';
+    g.filas.slice().sort((a, b) => a.filaReal - b.filaReal).forEach(f => {
+      const r = f.r, act = _cfFilaActiva(f);
+      const nom = String(r[2] || '').replace(/^❌\s*ANULADA\s*—\s*/, '');
+      const cant = Math.abs(parseAR(r[3]) || 0), precio = parseAR(r[4]) || 0, neto = Math.abs(parseAR(r[5]) || 0);
+      const sinDev = _cfNorm(r[15]) === 'SI';
+      const btnX = (esAdmin && act && estado === 'ACTIVA') ? '<button type="button" class="cf-ib" onclick="cfAnularRenglon(\'' + id + '\',' + f.filaReal + ')" title="Anular este renglón">✕</button>' : '';
+      h += '<div class="cf-ren' + (act ? '' : ' anulado') + '" style="padding:8px 0"><div class="cf-rn"><div class="cf-rt">' + _esc(nom) + (act ? '' : ' <span class="cf-chip rojo">ANULADO</span>') + '</div>'
+        + '<div class="cf-rs">' + (act ? (sinDev ? 'sin devolución · ' : _cfFmtCant(cant) + ' bulto' + (cant !== 1 ? 's' : '') + ' · ') : '') + fmtN(precio) + '/u' + (r[14] !== '' && r[14] != null ? ' · IVA ' + _cfAlicTxt(r[14]) : '') + '</div></div>'
+        + '<div class="cf-ra" style="flex-direction:row;align-items:center"><div class="cf-rm">' + fmt(neto) + '</div>' + btnX + '</div></div>';
+    });
+    if (c.length) {
+      const p = [['Percepción IIBB', c[12]], ['Percepción IVA', c[13]], ['Percepción municipal', c[14]]].filter(x => parseAR(x[1]));
+      if (p.length) h += '<div class="cf-rs" style="padding:6px 0">' + p.map(x => x[0] + ' ' + fmt(parseAR(x[1]))).join(' · ') + '</div>';
+      if (c[7]) h += '<div class="cf-rs" style="padding:2px 0 6px">Recibió: ' + _esc(c[7]) + '</div>';
+    }
+    if (esAdmin && estado === 'ACTIVA' && g.filas.some(_cfFilaActiva)) {
+      h += '<button type="button" class="btn-out" style="margin-top:6px;padding:10px;border-color:var(--rojo);color:var(--rojo)" onclick="cfAnularComprobante(\'' + id + '\')">✕ Anular ' + (nc ? 'toda la nota de crédito' : 'toda la factura') + '</button>';
+    }
+    h += '</div>';
+  }
+  return h;
+}
+async function cfAnularComprobante(id) {
+  if (!SESION || SESION.tipo !== 'admin') { showToast('🔒 Solo el admin puede anular'); return; }
+  const g = _cfHistComp[id];
+  if (!g) { showToast('⚠️ No encontré ese comprobante, actualizá la pantalla'); return; }
+  const c = g.cab || [];
+  const nc = _cfNorm(c[2]) === 'NC';
+  const cta = _cfNorm(c[6]) === 'CTA CTE';
+  if (!confirm('¿Anular toda la ' + (nc ? 'nota de crédito' : 'factura') + ' ' + (c[4] || '') + ' de ' + (c[3] || '') + '?\n\n'
+    + (nc ? '• Lo devuelto vuelve a sumarse al stock\n' : '• Se resta del stock lo que había entrado\n• El precio y el proveedor de cada insumo vuelven a los anteriores (solo si esta era su última compra)\n')
+    + (cta ? '• Se ajusta la cuenta corriente del proveedor\n' : '')
+    + '• Las filas quedan marcadas como ANULADAS (no se borran)\n\nEsta acción no se puede deshacer.')) return;
+  await _cfAnularEnviar({ op: 'anular', id }, 'Anular ' + (nc ? 'nota de crédito ' : 'factura ') + (c[4] || '') + ' · ' + (c[3] || ''));
+}
+async function cfAnularRenglon(id, fila) {
+  if (!SESION || SESION.tipo !== 'admin') { showToast('🔒 Solo el admin puede anular'); return; }
+  const g = _cfHistComp[id];
+  const f = g && g.filas.find(x => x.filaReal === fila);
+  if (!f) { showToast('⚠️ No encontré ese renglón, actualizá la pantalla'); return; }
+  const c = g.cab || [];
+  const nc = _cfNorm(c[2]) === 'NC';
+  const activos = g.filas.filter(_cfFilaActiva).length;
+  if (!confirm('¿Anular el renglón "' + f.r[2] + '" de la ' + (nc ? 'nota de crédito' : 'factura') + ' ' + (c[4] || '') + '?\n\n'
+    + (nc ? '• Lo devuelto vuelve a sumarse al stock\n' : '• Se resta del stock lo que había entrado\n• El precio y el proveedor vuelven a los anteriores (solo si era la última compra de ese insumo)\n')
+    + (_cfNorm(c[6]) === 'CTA CTE' ? '• Se descuenta de la cuenta corriente (renglón + su IVA)\n' : '')
+    + (activos === 1 ? '\nEs el último renglón activo: se anula la ' + (nc ? 'nota de crédito' : 'factura') + ' completa (con sus percepciones).\n' : '')
+    + '\nEsta acción no se puede deshacer.')) return;
+  await _cfAnularEnviar({ op: 'anularRenglon', id, fila }, 'Anular renglón ' + f.r[2] + ' · ' + (nc ? 'NC ' : 'factura ') + (c[4] || '') + ' · ' + (c[3] || ''));
+}
+async function _cfAnularEnviar(payload, detalleLog) {
+  showToast('⏳ Anulando...');
+  const d = await _cfEnviar(Object.assign({ action: 'compraComprobante' }, payload));
+  if (_cfManejarError(d, 'anular compra')) { cargarComprasHist(); return; }
+  _cfAplicarRespuesta(d);
+  if (!d.duplicate) logMov('Compras', 'Anulación', detalleLog + (d.montoCta ? ' · Cta. Cte. ' + fmt(d.montoCta) : ''), SESION?.name || 'Admin');
+  showToast(d.duplicate ? '✅ Ya estaba anulado' : '✅ Anulado · stock y precios revertidos');
+  if (d.avisos && d.avisos.length) alert('Anulado, con avisos:\n\n• ' + d.avisos.join('\n• '));
+  cargarComprasHist();
 }
 // ── Buscador de precios de insumos (uso rápido en reuniones con proveedores) ──
 function _buildUltimaCompraMap() {
@@ -16501,7 +16899,7 @@ function abrirDeshacerCompra(filaReal) {
   const nom = r[2]||'', cant = parseAR(r[3])||0, precio = parseAR(r[4])||0, fecha = r[1]||'';
   const ok = window.confirm(
     '¿Deshacer esta compra?\n\n' + nom + '\n' + cant + ' bultos · ' + fmtN(precio) + '/u · ' + fecha +
-    '\n\nSe va a restar el stock, restaurar el precio anterior de este insumo (si lo encuentro en el historial), y anular esta fila del Log de Compras.' +
+    '\n\nSe va a restar el stock, restaurar el precio anterior de este insumo (solo si esta fue su última compra — si después hubo otra, el precio vigente no se toca) y anular esta fila del Log de Compras.' +
     '\n\nEsta acción no se puede deshacer.'
   );
   if (!ok) return;
@@ -16529,9 +16927,14 @@ async function _ejecutarDeshacerCompra(filaReal, nom, cant, fecha) {
   // datos existentes — no inserta arriba. _comprasHistCache ya está ordenado
   // descendente por filaReal, así que el primer match de "menor a filaReal" es el
   // predecesor más cercano cronológicamente)
+  // v5.00 (28/10/2026): solo si esta compra era la ÚLTIMA (activa) de ese
+  // insumo. Antes, al anular una compra vieja se pisaba el precio vigente,
+  // que venía de una compra más nueva.
   let precioAnterior = null;
-  const previas = _comprasHistCache.filter(x => x.filaReal < filaReal && (x.r[2]||'').toString().trim().toUpperCase() === nom.toString().trim().toUpperCase());
-  if (previas.length) precioAnterior = parseAR(previas[0].r[4]) || null;
+  const _mismoIns = x => (x.r[2]||'').toString().trim().toUpperCase() === nom.toString().trim().toUpperCase();
+  const posteriores = _comprasHistCache.filter(x => x.filaReal > filaReal && _mismoIns(x));
+  const previas = _comprasHistCache.filter(x => x.filaReal < filaReal && _mismoIns(x));
+  if (!posteriores.length && previas.length) precioAnterior = parseAR(previas[0].r[4]) || null;
   if (precioAnterior !== null && ins.filaIns) {
     await writeRange('Insumos!F'+ins.filaIns, precioAnterior);
     ins.precioCompra = precioAnterior;
@@ -16540,8 +16943,8 @@ async function _ejecutarDeshacerCompra(filaReal, nom, cant, fecha) {
   await writeRange('Log Compras!A'+filaReal, [['ANULADA']]);
   await writeRange('Log Compras!C'+filaReal, [['❌ ANULADA — ' + nom]]);
   await writeRange('Log Compras!D'+filaReal, [[0]]);
-  logMov('Compras', 'Deshacer compra', nom + ' · ' + cant + ' bultos · ' + fecha + (precioAnterior!==null ? ' · precio restaurado a '+fmtN(precioAnterior) : ' · sin precio anterior en el historial, revisar a mano'), SESION?.name || 'Admin');
-  showToast(precioAnterior!==null ? '✅ Compra deshecha · stock y precio revertidos' : '⚠️ Compra deshecha · stock revertido, pero no encontré precio anterior (revisalo a mano)');
+  logMov('Compras', 'Deshacer compra', nom + ' · ' + cant + ' bultos · ' + fecha + (precioAnterior!==null ? ' · precio restaurado a '+fmtN(precioAnterior) : (posteriores.length ? ' · hubo compras posteriores, el precio vigente no se tocó' : ' · sin precio anterior en el historial, revisar a mano')), SESION?.name || 'Admin');
+  showToast(precioAnterior!==null ? '✅ Compra deshecha · stock y precio revertidos' : (posteriores.length ? '✅ Compra deshecha · stock revertido (el precio vigente es de una compra posterior, no se tocó)' : '⚠️ Compra deshecha · stock revertido, pero no encontré precio anterior (revisalo a mano)'));
   cargarComprasHist();
 }
 
@@ -17121,7 +17524,7 @@ async function loadProv() {
   }
 
   // Movimientos últimos 15 días
-  const rows = await readRange(cfg.sheet + '!A6:I300');
+  const rows = await readRange(cfg.sheet + '!A6:I4000'); // v5.00: antes A6:I300
   const el = document.getElementById('provMovs');
   if (rows === null) { el.innerHTML='<div class="empty"><div class="ei">⚠️</div><p>No se pudieron cargar los movimientos (error de conexión)</p></div>'; return; }
   if (!rows.length) { el.innerHTML='<div class="empty"><div class="ei">📭</div><p>Sin movimientos</p></div>'; return; }
@@ -17135,8 +17538,11 @@ async function loadProv() {
   el.innerHTML = '<div class="list-card">' + fil.map(r => {
     const fecha=r[0]||''; const conc=r[2]||r[3]||'—';
     const debe=parseAR(r[4]); const haber=parseAR(r[5]||r[6]);
-    const esH=haber>0;
-    return '<div class="list-row"><div class="lr-left"><div class="lr-ico '+(esH?'verde':'rojo')+'-bg">'+(esH?'📥':'📤')+'</div><div><div class="lr-name" style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px)">'+conc+'</div><div class="lr-sub">'+fecha+'</div></div></div><div style="font-size:clamp(13px,calc(0.521vw + 10.5px),18px);font-weight:700;color:'+(esH?'var(--verde)':'var(--rojo)')+'">'+( esH?'+'+fmt(haber):'-'+fmt(debe))+'</div></div>';
+    // v5.00: notas de crédito y anulaciones van en Debe con importe NEGATIVO
+    // (bajan la deuda) — se muestran igual que un pago.
+    const mov = haber - debe;
+    const esH = mov > 0;
+    return '<div class="list-row"><div class="lr-left"><div class="lr-ico '+(esH?'verde':'rojo')+'-bg">'+(esH?'📥':'📤')+'</div><div><div class="lr-name" style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px)">'+conc+'</div><div class="lr-sub">'+fecha+'</div></div></div><div style="font-size:clamp(13px,calc(0.521vw + 10.5px),18px);font-weight:700;color:'+(esH?'var(--verde)':'var(--rojo)')+'">'+(esH?'+':'-')+fmt(Math.abs(mov))+'</div></div>';
   }).join('') + '</div>';
   _setLastUpdate();
 }
@@ -18994,7 +19400,6 @@ const UNDO_FORMS = {
   remitos:  ['remNum','remFecha'],
   cuentas:  ['ctaFecha','ctaTipo','ctaDetalle','ctaMonto','ctaForma'],
   caja:     ['cajaFecha','cajaTurno','cajaConcepto','cajaTipo','cajaIng','cajaEgr'],
-  compras:  ['compInsumo','compResp','compCant','compPrecio','compFact','compProv'],
   retiros:  ['retInsumo','retResp','retCant','retMotivo'],
   provfact: ['provFactFecha','provFactNum','provFactConcepto','provFactImp'],
   provpago: ['provPagoFecha','provPagoComp','provPagoConcepto','provPagoFP','provPagoImp'],
