@@ -7653,7 +7653,7 @@ function renderAlertasContent() {
 // % de descuento o aumento (redondeado a $100) y condiciones que el cliente ve. Un solo botón Guardar publica todo. Se
 // sacan gasto fijo, escalas por costo, margen mínimo, redondeo, piso, modos base/fijo y la lista PDF. La página de
 // compras suma la pestaña "Lista de precios" (página v1.3). Requiere Code.gs v5.16 (col. Q CONDICIONES).
-const APP_VERSION = 'v5.24 · 25/11/2026 — Mayoristas: categorías, sabores con costo y clientes con %.';
+const APP_VERSION = 'v5.25 · 26/11/2026 — Remitos: control de stock de paletas e insumos y PDF con nombre.';
 const CFG = {
   precioFQ: 0,
 
@@ -16564,11 +16564,12 @@ function poblarPaletaSel() {
     sel.appendChild(o);
   });
   if (sel.dataset.ssInit) _ssUpdateLabel(sel); else _ssInit(sel);
+  _remRefrescarStockSelectores(); // v5.25
   // También poblar el selector de paletas en Baja Mercadería
   bajPoblarPaletaSel();
 }
 
-function addPaleta() {
+async function addPaleta() {
   const idx  = document.getElementById('paletaSel').value;
   const cant = parseInt(document.getElementById('paletaCant').value) || 0;
   if (idx === '' || idx === null) { showToast('⚠️ Seleccioná un sabor'); return; }
@@ -16576,6 +16577,13 @@ function addPaleta() {
   const p = PALETAS_DATA[parseInt(idx)];
   if (!p) { showToast('⚠️ Paleta no encontrada'); return; }
   if (_remEsMayorista()) { showToast('⚠️ Las paletas no están en la lista mayorista'); return; }
+  // v5.25: control de stock (solo remitos; la NC devuelve).
+  let _sinStock = false;
+  if (REM_MODO !== 'nc') {
+    const chk = await _remChequearAlAgregar('pal', String(p.codS).padStart(5, '0'), p.nom, cant, 'u.');
+    if (chk === null) return;
+    _sinStock = chk;
+  }
   const subNeto  = cant * p.pNeto;
   const subBruto = cant * p.pBruto;
   REM_ITEMS.push({
@@ -16585,13 +16593,100 @@ function addPaleta() {
     precio: p.pNeto, pBruto: p.pBruto,
     sub: subNeto, subBruto,
     esPaleta: true,
-    devuelveStock: false
+    devuelveStock: false,
+    sinStock: _sinStock
   });
   renderRem();
   document.getElementById('paletaSel').value = '';
   document.getElementById('paletaCant').value = '';
   _ssUpdateLabel(document.getElementById('paletaSel'));
   showToast('✅ ' + p.nom + ' × ' + cant + ' u.');
+}
+
+// ── CONTROL DE STOCK EN REMITOS (v5.25, 26/11/2026, pedido de Nico) ───────
+// Paletas (Stock Helados col. D) e insumos (Stock MP col. F). Al agregar un
+// ítem se compara contra el stock real menos lo ya cargado en el mismo
+// remito; si no alcanza se pregunta y el que arma el remito puede forzarlo
+// (queda marcado ⚠️ y se registra en Movimientos). Al cerrar se vuelve a
+// controlar todo junto, y Code.gs v5.17 controla de nuevo dentro del lock
+// (responde 'sinStock' si no viene forzado). Helados escaneados y NC: sin
+// control. Los selectores muestran el stock al lado del nombre.
+let _REM_STK = { pal: null, ins: null, t: 0 };
+let _remStockChk = null; // {forzado} ya resuelto para el remito actual (se borra si cambian los ítems)
+async function _remLeerStock(force) {
+  if (!force && _REM_STK.t && Date.now() - _REM_STK.t < 20000) return true;
+  const [sh, mp] = await Promise.all([readRange('Stock Helados!A5:D210'), readRange('Stock MP!A5:F200')]);
+  if (!sh || !mp) return false;
+  const pal = {}, ins = {};
+  sh.forEach(r => { const c = String(r[0] || '').trim(); if (c && /^PALETA/i.test(String(r[1] || '').trim())) pal[c.padStart(5, '0')] = parseAR(r[3]); });
+  mp.forEach((r, i) => { if (String(r[1] || '').trim()) ins[i + 5] = parseAR(r[5]); });
+  _REM_STK = { pal, ins, t: Date.now() };
+  return true;
+}
+function _remFmtCant(n) { return (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('es-AR'); }
+function _remYaCargado(tipo, key, sinIdx) {
+  if (tipo === 'pal') return REM_ITEMS.reduce((s, it, i) => s + ((it.esPaleta && String(it.codS).padStart(5, '0') === key && i !== sinIdx) ? (Number(it.kg) || 0) : 0), 0);
+  return SEC_B.reduce((s, it, i) => s + ((it.filaStock === key && i !== sinIdx) ? (Number(it.cant) || 0) : 0), 0);
+}
+// Devuelve false (hay stock), true (no hay y se forzó) o null (cancelado / bloqueado).
+async function _remChequearAlAgregar(tipo, key, nom, cant, unidad) {
+  const ok = await _remLeerStock(false);
+  if (!ok) { showToast('⚠️ No se pudo leer el stock ahora — se controla al cerrar el remito', 5000); return false; }
+  const hay = (tipo === 'pal' ? _REM_STK.pal : _REM_STK.ins)[key];
+  if (hay === undefined) { showToast('⚠️ ' + nom + ' no tiene fila de stock — no se puede mandar', 6000); return null; }
+  const ya = _remYaCargado(tipo, key);
+  if (cant <= hay - ya + 1e-9) return false;
+  const msg = 'Sin stock suficiente de ' + nom + '.\n\n' +
+    'Hay: ' + _remFmtCant(hay) + ' ' + unidad + '\n' +
+    (ya ? 'Ya cargado en este remito: ' + _remFmtCant(ya) + '\n' : '') +
+    'Querés agregar: ' + _remFmtCant(cant) + '\n\n' +
+    '¿Agregar igual? (queda registrado que se mandó sin stock)';
+  return confirm(msg) ? true : null;
+}
+// Pinta "(stock)" al lado de cada opción de los selectores de Remitos.
+async function _remRefrescarStockSelectores(force) {
+  const ok = await _remLeerStock(!!force);
+  if (!ok) return;
+  const pinta = (sel, fn) => {
+    if (!sel) return;
+    Array.from(sel.options).forEach(o => {
+      if (o.value === '') return;
+      const t = fn(parseInt(o.value, 10));
+      if (t) o.textContent = t;
+    });
+    if (sel.dataset.ssInit) _ssUpdateLabel(sel);
+  };
+  pinta(document.getElementById('secBSel'), i => {
+    const ins = INSUMOS[i]; if (!ins) return '';
+    const h = ins.filaStock ? _REM_STK.ins[ins.filaStock] : undefined;
+    return ins.nom + ' (' + (h === undefined ? 'sin stock MP' : _remFmtCant(h)) + ')';
+  });
+  pinta(document.getElementById('paletaSel'), i => {
+    const p = PALETAS_DATA[i]; if (!p) return '';
+    const h = _REM_STK.pal[String(p.codS).padStart(5, '0')];
+    return p.nom + ' (' + (h === undefined ? '—' : _remFmtCant(h)) + ')';
+  });
+}
+// Control final al cerrar: {forzado, faltantes} o null si se cancela.
+async function _remChequeoStockCierre() {
+  const pals = {}, inss = {};
+  REM_ITEMS.forEach(it => { if (it.esPaleta) { const k = String(it.codS).padStart(5, '0'); if (!pals[k]) pals[k] = { nom: it.nom, cant: 0 }; pals[k].cant += Number(it.kg) || 0; } });
+  for (const it of SEC_B) {
+    if (!it.filaStock) { showToast('⚠️ ' + it.nom + ' no está en Stock MP — sacalo del remito o corregí el nombre en la planilla', 7000); return null; }
+    if (!inss[it.filaStock]) inss[it.filaStock] = { nom: it.nom, cant: 0 }; inss[it.filaStock].cant += Number(it.cant) || 0;
+  }
+  if (!Object.keys(pals).length && !Object.keys(inss).length) return { forzado: false, faltantes: [] };
+  const ok = await _remLeerStock(true);
+  if (!ok) return { forzado: false, faltantes: [] }; // sin lectura: controla el servidor
+  const falt = [];
+  Object.entries(pals).forEach(([k, g]) => { const h = _REM_STK.pal[k] || 0; if (g.cant > h + 1e-9) falt.push({ nom: g.nom, hay: h, pide: g.cant }); });
+  Object.entries(inss).forEach(([k, g]) => { const h = _REM_STK.ins[k] || 0; if (g.cant > h + 1e-9) falt.push({ nom: g.nom, hay: h, pide: g.cant }); });
+  if (!falt.length) return { forzado: false, faltantes: [] };
+  return _remConfirmarFaltantes(falt) ? { forzado: true, faltantes: falt } : null;
+}
+function _remConfirmarFaltantes(falt) {
+  const lista = falt.map(f => '• ' + f.nom + ': hay ' + _remFmtCant(f.hay) + ', se mandan ' + _remFmtCant(f.pide)).join('\n');
+  return confirm('No alcanza el stock de:\n\n' + lista + '\n\n¿Cerrar el remito igual? (el stock queda en negativo y se registra en Movimientos)');
 }
 
 // ── INSUMOS (lista compartida) ───────────────────────────────
@@ -16665,6 +16760,7 @@ async function loadInsumosLists() {
     sb.innerHTML = '<option value="">— Seleccioná —</option>';
     INSUMOS.forEach((ins,i) => { const o=document.createElement('option'); o.value=i; o.textContent=ins.nom; sb.appendChild(o); });
     if (sb.dataset.ssInit) _ssUpdateLabel(sb); else _ssInit(sb);
+    _remRefrescarStockSelectores(); // v5.25
   }
   // Cargar precios desde hoja Precios y poblar selector de paletas
   await loadPrecios();
@@ -17255,6 +17351,7 @@ async function importarCodigos(input) {
   showToast(msg);
 }
 function renderRem() {
+  _remStockChk = null; // v5.25: cambió el remito → al cerrar se vuelve a controlar el stock
   _remRepreciar(); // v5.16
   const tabla = document.getElementById('remTabla');
   const contEl = document.getElementById('remContador');
@@ -17264,7 +17361,7 @@ function renderRem() {
     if (contEl) { contEl.style.display='block'; contNum.textContent=REM_ITEMS.length; }
     document.getElementById('remRows').innerHTML = REM_ITEMS.map((it,i) => {
       const cantLabel = it.esPaleta ? it.kg + ' u.' : it.kg.toFixed(3) + ' kg';
-      return '<div class="rem-row"><div><div style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:500">'+it.nom+'</div><div style="font-size:clamp(9px,calc(0.312vw + 7.5px),12px);color:var(--gris)">'+it.cod+'</div></div><div style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);color:var(--verde);font-weight:600">'+cantLabel+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:700'+(it.sinPrecioMay?';color:var(--rojo)':'')+'">'+(it.sinPrecioMay?'⚠️ sin precio':fmtN(it.sub))+'</span><span onclick="quitarTacho('+i+')" style="color:var(--rojo);cursor:pointer;padding:2px 6px;font-size:clamp(14px,calc(0.312vw + 12.5px),17px)">✕</span></div></div>';
+      return '<div class="rem-row"><div><div style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:500">'+(it.sinStock?'<span title="Se manda sin stock suficiente" style="color:var(--oro)">⚠️ </span>':'')+it.nom+'</div><div style="font-size:clamp(9px,calc(0.312vw + 7.5px),12px);color:var(--gris)">'+it.cod+'</div></div><div style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);color:var(--verde);font-weight:600">'+cantLabel+'</div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:700'+(it.sinPrecioMay?';color:var(--rojo)':'')+'">'+(it.sinPrecioMay?'⚠️ sin precio':fmtN(it.sub))+'</span><span onclick="quitarTacho('+i+')" style="color:var(--rojo);cursor:pointer;padding:2px 6px;font-size:clamp(14px,calc(0.312vw + 12.5px),17px)">✕</span></div></div>';
     }).join('');
     const totA = REM_ITEMS.reduce((s,i)=>s+i.sub,0);
     document.getElementById('remTot').textContent = fmtN(totA);
@@ -17312,7 +17409,7 @@ function renderResumen() {
   el.style.display = 'block';
 }
 function quitarTacho(i) { REM_ITEMS.splice(i,1); renderRem(); }
-function addInsumoB() {
+async function addInsumoB() {
   const idx = document.getElementById('secBSel').value;
   const cant = parseFloat(document.getElementById('secBCant').value)||0;
   if (!idx && idx!==0) { showToast('⚠️ Seleccioná un insumo'); return; }
@@ -17320,19 +17417,28 @@ function addInsumoB() {
   const ins = INSUMOS[parseInt(idx)];
   if (!ins) { showToast('⚠️ Insumo no encontrado'); return; }
   if (_remEsMayorista() && !_mayrPrecioInsumo(ins.nom)) { showToast('⚠️ ' + ins.nom + ' no está habilitado para mayoristas (en la hoja Insumos le falta el % de la col. N o el precio de compra)', 6000); return; }
+  // v5.25: control de stock (solo remitos; la NC devuelve).
+  let _sinStock = false;
+  if (REM_MODO !== 'nc') {
+    if (!ins.filaStock) { showToast('⚠️ ' + ins.nom + ' no está en Stock MP (el nombre tiene que ser igual en Insumos y Stock MP). No se puede mandar.', 7000); return; }
+    const chk = await _remChequearAlAgregar('ins', ins.filaStock, ins.nom, cant, 'bultos');
+    if (chk === null) return;
+    _sinStock = chk;
+  }
   const subtNeto = cant * ins.precio;
   const subtBruto = cant * ins.precioBruto;
-  SEC_B.push({...ins, cant, subtNeto, subtBruto, devuelveStock:false});
+  SEC_B.push({...ins, cant, subtNeto, subtBruto, devuelveStock:false, sinStock:_sinStock});
   renderSecB();
   document.getElementById('secBSel').value='';
   document.getElementById('secBCant').value='';
   showToast('✅ '+ins.nom+' agregado');}
 function renderSecB() {
+  _remStockChk = null; // v5.25
   _remRepreciar(); // v5.16
   const el = document.getElementById('secBRows');
   if (!SEC_B.length) { el.innerHTML=''; document.getElementById('secBTotal').style.display='none'; calcTotGen(); return; }
   el.innerHTML = '<div style="background:var(--surface);padding:8px 14px 4px">' + SEC_B.map((it,i) => {
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #54555C"><div style="display:flex;align-items:center;gap:8px"><div style="font-size:clamp(18px,calc(0.417vw + 16.0px),22px)">📦</div><div><div style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:600;color:var(--texto)">'+it.nom+'</div><div style="font-size:clamp(10px,calc(0.417vw + 8.0px),14px);color:var(--gris)">'+it.cant+' bultos · '+fmtN(it.precio)+'/u</div></div></div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:700;color:'+(it.sinPrecioMay?'var(--rojo)':'#7DC998')+'">'+(it.sinPrecioMay?'⚠️ sin precio':fmtN(it.subtNeto))+'</span><span onclick="quitarInsB('+i+')" style="color:var(--rojo);cursor:pointer;font-size:clamp(16px,calc(0.312vw + 14.5px),19px);padding:2px 4px">✕</span></div></div>';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #54555C"><div style="display:flex;align-items:center;gap:8px"><div style="font-size:clamp(18px,calc(0.417vw + 16.0px),22px)">📦</div><div><div style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:600;color:var(--texto)">'+(it.sinStock?'<span title="Se manda sin stock suficiente" style="color:var(--oro)">⚠️ </span>':'')+it.nom+'</div><div style="font-size:clamp(10px,calc(0.417vw + 8.0px),14px);color:var(--gris)">'+it.cant+' bultos · '+fmtN(it.precio)+'/u</div></div></div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:clamp(12px,calc(0.417vw + 10.0px),16px);font-weight:700;color:'+(it.sinPrecioMay?'var(--rojo)':'#7DC998')+'">'+(it.sinPrecioMay?'⚠️ sin precio':fmtN(it.subtNeto))+'</span><span onclick="quitarInsB('+i+')" style="color:var(--rojo);cursor:pointer;font-size:clamp(16px,calc(0.312vw + 14.5px),19px);padding:2px 4px">✕</span></div></div>';
   }).join('') + '</div>';
   const totB = SEC_B.reduce((s,i)=>s+i.subtNeto,0);
   document.getElementById('secBTot').textContent = fmtN(totB);
@@ -18920,7 +19026,7 @@ function _generarHTMLRemito(num, fecha, franq) {
   // v5.16: mayorista → sin logo ni marca Le Crèmme, a nombre de NIELA S.A.S.
   const _cliPdf = (typeof _mayrCliente === 'function') ? _mayrCliente(franq) : null;
   const _html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>${tituloTipo}_${franqSlug}_${fechaFmt}</title>
+<title>${_nombreArchivoComprobante(num, fecha, franq)}</title>
 <style>
   body{font-family:Arial,sans-serif;font-size:clamp(11px,calc(0.417vw + 9.0px),15px);color:#222;margin:24px;max-width:800px}
   h1{font-size:clamp(20px,calc(0.417vw + 18.0px),24px);color:#C0395B;margin:0}
@@ -18975,8 +19081,28 @@ ${resumenPDF}
     .replace(/<div class="footer">LE CRÈMME · Sistema de Gestión · /, '<div class="footer">' + MAY_EMPRESA.nombre + ' · ');
 }
 
+// v5.25 (26/11/2026, pedido de Nico): nombre del PDF = franquicia_fecha_número,
+// ej. "martinolli_26_11_2026_RM-0098" (NC: "..._NC-0012"). Minúsculas, sin
+// acentos, fecha del comprobante. El número al final evita nombres repetidos.
+function _nombreArchivoComprobante(num, fecha, franq) {
+  const slug = String(franq || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  const pad = n => String(n).padStart(2, '0');
+  const t = String(fecha || '').trim();
+  let f;
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) f = pad(m[3]) + '_' + pad(m[2]) + '_' + m[1];
+  else if ((m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/))) f = pad(m[1]) + '_' + pad(m[2]) + '_' + (m[3].length === 2 ? '20' + m[3] : m[3]);
+  else { const d = new Date(); f = pad(d.getDate()) + '_' + pad(d.getMonth() + 1) + '_' + d.getFullYear(); }
+  return [slug, f, String(num || '').trim()].filter(Boolean).join('_');
+}
 async function _compartirPDF(num, fecha, franq) {
   const html = _generarHTMLRemito(num, fecha, franq);
+  // v5.25: el navegador nombra el PDF con el título de la página PRINCIPAL
+  // (no el del iframe) → se cambia mientras está abierto el diálogo de impresión.
+  const _nombrePdf = _nombreArchivoComprobante(num, fecha, franq);
+  const _tituloOrig = document.title;
+  let _tituloVuelto = false;
+  const _volverTitulo = () => { if (_tituloVuelto) return; _tituloVuelto = true; document.title = _tituloOrig; };
   // Estrategia iframe: funciona en iOS Safari donde window.open+print falla
   let iframe = document.getElementById('_printFrame');
   if (iframe) iframe.remove();
@@ -18988,6 +19114,10 @@ async function _compartirPDF(num, fecha, franq) {
   doc.open(); doc.write(html); doc.close();
   iframe.contentWindow.focus();
   setTimeout(() => {
+    document.title = _nombrePdf;
+    try { iframe.contentWindow.addEventListener('afterprint', _volverTitulo); } catch(e) {}
+    window.addEventListener('afterprint', _volverTitulo, { once: true });
+    setTimeout(_volverTitulo, 60000); // por si el navegador no avisa el cierre del diálogo
     iframe.contentWindow.print();
     showToast('📄 Guardá como PDF y compartí por WhatsApp');
   }, 500);
@@ -19019,6 +19149,17 @@ async function cerrarRemito() {
     return;
   }
   const btn = document.getElementById('btnCerrarRemito');
+  // v5.25: control de stock de paletas e insumos (una vez por remito; los reintentos reusan la decisión).
+  if (!_remStockChk) {
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Controlando stock...'; btn.style.opacity = '.6'; }
+    const chk = await _remChequeoStockCierre();
+    if (!chk) {
+      _franqConfirmada = null;
+      if (btn) { btn.disabled = false; btn.textContent = '\u2705 Cerrar Remito'; btn.style.opacity = '1'; btn.style.background = ''; }
+      return;
+    }
+    _remStockChk = chk;
+  }
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; btn.style.opacity = '.6'; }
 
   if (!_remNumFijado) _remNumFijado = _validarNumComprobante('remito'); // sincrónico: usa el contador local
@@ -19057,8 +19198,24 @@ async function cerrarRemito() {
     histSheet: histMap[CUR_FRANQ], histInsSheet: histInsMap[CUR_FRANQ], insertAtRow2: false,
     helados: heladosRows, insumos: insumosRows,
     stockHelados, stockMP,
+    forzarSinStock: !!(_remStockChk && _remStockChk.forzado), // v5.25 (Code.gs v5.17)
     ctaSheet, ctaRow: ctaSheet ? [fecha, num, 'Remito ' + num, 'REMITO', totBruto, '', '', ''] : null
   });
+
+  // v5.25: el servidor encontró stock insuficiente (con el stock real, dentro
+  // del lock) y el remito no venía forzado. No se escribió nada: se pregunta
+  // y, si se confirma, se vuelve a mandar forzado (mismo número y reqId).
+  if (res && res.sinStock) {
+    const falt = Array.isArray(res.faltantes) ? res.faltantes : [];
+    if (falt.length && _remConfirmarFaltantes(falt)) {
+      _remStockChk = { forzado: true, faltantes: falt };
+      return cerrarRemito();
+    }
+    _remStockChk = null; _franqConfirmada = null;
+    if (btn) { btn.disabled = false; btn.textContent = '\u2705 Cerrar Remito'; btn.style.opacity = '1'; btn.style.background = ''; }
+    showToast('⚠️ ' + (res.error || 'Sin stock suficiente') , 7000);
+    return;
+  }
 
   // v5.22: el número ya lo había usado OTRO comprobante (ej. la tablet quedó
   // abierta desde el día anterior). El servidor no escribió nada y dice cuál
@@ -19096,6 +19253,13 @@ async function cerrarRemito() {
       h: REM_ITEMS.map(it => [it.cod, it.codS, it.nom, it.kg, it.esPaleta ? 'P' : it.esPetit ? 'T' : 'H', it.precio, it.pBruto, it.sub, it.subBruto]),
       i: SEC_B.map(it => [it.nom, it.cant, it.precio, it.precioBruto, it.subtNeto, it.subtBruto, it.filaStock || '']) } : null;
     logMov('Remitos', 'Cierre de remito', 'Remito ' + num + ' · Total bruto: ' + fmtB(totBruto), null, CUR_FRANQ, _remDesh);
+    // v5.25: registro de lo que se mandó sin stock suficiente (forzado por quien armó el remito).
+    const _faltReg = (res.forzadoSinStock && Array.isArray(res.faltantes) && res.faltantes.length) ? res.faltantes
+      : (_remStockChk && _remStockChk.forzado && !res.duplicate ? (_remStockChk.faltantes || []) : []);
+    if (_faltReg.length && !res.duplicate) {
+      logMov('Remitos', 'Remito sin stock (forzado)', 'Remito ' + num + ' · ' + _faltReg.map(f => f.nom + ': hay ' + _remFmtCant(f.hay) + ', se mandaron ' + _remFmtCant(f.pide)).join(' · '), null, CUR_FRANQ);
+    }
+    _remStockChk = null; _REM_STK.t = 0; _remRefrescarStockSelectores(true);
     if (!res.duplicate) {
       // Salida FIFO de Lotes Cámara: cada tacho/petit escaneado (no paletas) da de baja el lote más viejo de su sabor
       const _retiroLotes = {};
@@ -19470,6 +19634,7 @@ function limpiarRemito() {
   _ncNumFijado = null;
   _remReqId = null; _remRenumIntentos = 0; _ncReqId = null; _ncRenumIntentos = 0; // v5.22
   renderRem(); renderSecB();
+  _remStockChk = null; // v5.25
   document.getElementById('remTabla').style.display='none';
   document.getElementById('totGen').style.display='none';
   const res = document.getElementById('remResumen');
